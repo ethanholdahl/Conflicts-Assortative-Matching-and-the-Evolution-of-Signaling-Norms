@@ -1,5 +1,3 @@
-
-
 ## Load and install the packages
 library("tidyverse", "shiny")
 theme_set(theme_minimal())
@@ -7,6 +5,7 @@ theme_set(theme_minimal())
 
 # Define UI for the application
 navbarPage(title = "Costly Singals",
+           theme = shinythemes::shinytheme("spacelab"),
            tabPanel(
              "Speed of Evolution",
              tags$body(
@@ -66,7 +65,7 @@ navbarPage(title = "Costly Singals",
                         </div>'
                ),
                helpText(
-                 "Imagine now that players can signal and the cost of signaling is K. 
+                 "Imagine now that players can signal and the cost of signaling is K.
                  I will only consider cases where the signal is potentially beneficial for the high types.
                  This requires that the payoff of matching with a high type minus the cost of signaling is
                  greater than the payoff of matching with a low type:
@@ -85,16 +84,124 @@ navbarPage(title = "Costly Singals",
                  br(),
                  "2. Singals are permanent and elective",
                  br(),
-                 "3. Signals are permanent and appointed"
+                 "3. Signals are permanent and appointed",
+                 br(),
+                 "When signals are temporary (meaning that each period agents can decide if they want to keep paying for the signal) and when signals are
+                 elective (meaning agents choose whether or not to pay for the signal) players act optimally to maximize present value profits.
+                 In the simulations below you will be able to select values for a few paramaters.
+                 These include:",
+                 br(),
+                 br(),
+                 "1. Values for V(H,H), V(H,L), V(L,L), and V(L,H)",
+                 br(),
+                 "2. \\(H_0 \\in [0,1] \\) : The initial % of high type (H) players",
+                 br(),
+                 "3. \\(\\alpha \\in (0,1) \\) : The costliness paramater for \\(K\\) where \\(K = V(L,H) - V(L,L) + \\alpha *(V(H,H) + V(L,L) - V(H,L) - V(L,H))\\)",
+                 br(),
+                 "4. Discount rate \\(\\delta\\)",
+                 br(),
+                 "5. (If applicable) Error rate \\(\\epsilon\\)",
+                 br(),
+                 "6. (If applicable) \\(H_{0,S}, L_{0,S}\\): The initial proportion of signaling high and low type"
                ),
                br(),
-               tabsetPanel(
-                 tabPanel("Temporary and Elective",
-                          helpText("g")),
-                 tabPanel("Permanent and Elective",
-                          helpText("g")),
-                 tabPanel("Permanent and Appointed",
-                          helpText("g"))
+               sidebarLayout(
+                 sidebarPanel(
+                   numericInput(
+                     "vHH",
+                     label = "V(H,H):",
+                     min = 0,
+                     max = 100,
+                     step = 1,
+                     value = 20
+                   ),
+                   numericInput(
+                     "vHL",
+                     label = "V(H,L):",
+                     min = 0,
+                     max = 100,
+                     step = 1,
+                     value = 15
+                   ),
+                   numericInput(
+                     "vLL",
+                     label = "V(L,L):",
+                     min = 1,
+                     max = 100,
+                     step = 1,
+                     value = 10
+                   ),
+                   numericInput(
+                     "vLH",
+                     label = "V(L,H):",
+                     min = 1,
+                     max = 100,
+                     step = 1,
+                     value = 12
+                   ),
+                   sliderInput(
+                     "ratio",
+                     label = "Initial % high type \\(H_0\\):",
+                     min = 0,
+                     max = 100,
+                     step = 1,
+                     value = 20
+                   ),
+                   sliderInput(
+                     "alpha",
+                     label = "Costliness parameter \\(\\alpha\\):",
+                     min = .01,
+                     max = .99,
+                     step = .01,
+                     value = .5
+                   ),
+                   sliderInput(
+                     "delta",
+                     label = "Depreciation \\(\\delta\\):",
+                     min = 0,
+                     max = 1,
+                     step = .01,
+                     value = .05
+                   ),
+                   sliderInput(
+                     "epsilon",
+                     label = "Error rate \\(\\epsilon\\):",
+                     min = 0,
+                     max = 1,
+                     step = .0001,
+                     value = 0
+                   ),
+                   sliderInput(
+                     "ratio_h",
+                     label = "Initial % signalers given high type \\(H_{0,S}\\):",
+                     min = 0,
+                     max = 1,
+                     step = .01,
+                     value = .5
+                   ),
+                   sliderInput(
+                     "ratio_l",
+                     label = "Initial % signalers given low type \\(L_{0,S}\\):",
+                     min = 0,
+                     max = 1,
+                     step = .01,
+                     value = 0
+                   )
+                 ),
+                 mainPanel(
+                   htmlOutput("table"),
+                   br(),
+                   htmlOutput("signal_table"),
+                   br(),
+                   tabsetPanel(
+                   tabPanel("Temporary and Elective",
+                            helpText("g")),
+                   tabPanel("Permanent and Elective",
+                            helpText("g")),
+                   tabPanel("Permanent and Appointed",
+                            helpText("g"))
+                 )),
+                 position = "left"
                )
-             )
-           ))
+             ))
+)
