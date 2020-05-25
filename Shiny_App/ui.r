@@ -107,23 +107,23 @@ navbarPage(title = "Costly Singals",
                br(),
                sidebarLayout(
                  sidebarPanel(
-                   numericInput(
+                   sliderInput(
                      "vHH",
                      label = "V(H,H):",
-                     min = 0,
+                     min = 4,
                      max = 100,
                      step = 1,
                      value = 20
                    ),
-                   numericInput(
+                   sliderInput(
                      "vHL",
                      label = "V(H,L):",
-                     min = 0,
+                     min = 2,
                      max = 100,
                      step = 1,
                      value = 15
                    ),
-                   numericInput(
+                   sliderInput(
                      "vLL",
                      label = "V(L,L):",
                      min = 1,
@@ -131,7 +131,7 @@ navbarPage(title = "Costly Singals",
                      step = 1,
                      value = 10
                    ),
-                   numericInput(
+                   sliderInput(
                      "vLH",
                      label = "V(L,H):",
                      min = 1,
@@ -189,10 +189,6 @@ navbarPage(title = "Costly Singals",
                    )
                  ),
                  mainPanel(
-                   htmlOutput("table"),
-                   br(),
-                   htmlOutput("signal_table"),
-                   br(),
                    tabsetPanel(
                    tabPanel("Temporary and Elective",
                             helpText("g")),
