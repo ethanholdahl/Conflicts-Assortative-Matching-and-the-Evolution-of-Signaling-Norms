@@ -98,11 +98,13 @@ navbarPage(title = "Costly Singals",
                  br(),
                  "3. \\(\\alpha \\in (0,1) \\) : The costliness paramater for \\(K\\) where \\(K = V(L,H) - V(L,L) + \\alpha *(V(H,H) + V(L,L) - V(H,L) - V(L,H))\\)",
                  br(),
-                 "4. Discount rate \\(\\delta\\)",
+                 "4. Time horizon \\(T\\)",
                  br(),
-                 "5. (If applicable) Error rate \\(\\epsilon\\)",
+                 "5. Discount rate \\(\\delta\\)",
                  br(),
-                 "6. (If applicable) \\(H_{0,S}, L_{0,S}\\): The initial proportion of signaling high and low type"
+                 "6. Mutation rate \\(\\epsilon\\)",
+                 br(),
+                 "7. (If applicable) \\(H_{0,S}, L_{0,S}\\): The initial proportion of high and low type signaling"
                ),
                br(),
                sidebarLayout(
@@ -148,12 +150,20 @@ navbarPage(title = "Costly Singals",
                      value = 20
                    ),
                    sliderInput(
-                     "alpha",
-                     label = "Costliness parameter \\(\\alpha\\):",
+                     "A",
+                     label = "Costliness parameter A:",
                      min = .01,
                      max = .99,
                      step = .01,
                      value = .5
+                   ),
+                   sliderInput(
+                     "time",
+                     label = "Time horizon \\(T\\):",
+                     min = 1,
+                     max = 100,
+                     step = 1,
+                     value = 20
                    ),
                    sliderInput(
                      "delta",
@@ -165,7 +175,7 @@ navbarPage(title = "Costly Singals",
                    ),
                    sliderInput(
                      "epsilon",
-                     label = "Error rate \\(\\epsilon\\):",
+                     label = "Mutation rate \\(\\epsilon\\):",
                      min = 0,
                      max = 1,
                      step = .0001,
@@ -195,9 +205,11 @@ navbarPage(title = "Costly Singals",
                    tabPanel("Permanent and Elective",
                             helpText("g")),
                    tabPanel("Permanent and Appointed",
-                            helpText("g"))
+                            plotOutput("PA")
                  )),
                  position = "left"
+                 )
                )
-             ))
+             )
+           )
 )
