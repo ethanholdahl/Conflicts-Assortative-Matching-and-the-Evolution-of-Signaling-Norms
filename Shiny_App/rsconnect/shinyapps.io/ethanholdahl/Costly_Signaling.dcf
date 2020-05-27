@@ -5,8 +5,8 @@ account: ethanholdahl
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 2365332
-bundleId: 3196157
+bundleId: 3197090
 url: https://ethanholdahl.shinyapps.io/Costly_Signaling/
-when: 1590594008.41344
+when: 1590607155.10384
 asMultiple: FALSE
 asStatic: FALSE
