@@ -200,7 +200,10 @@ navbarPage(title = "Costly Singals",
                    )
                  ),
                  mainPanel(
-                   h4("One Population"),
+                   h4("One population of fixed size"),
+                   helpText("Within population groups evolve according to the
+                            expected payoff their group earns relative to the
+                            total expected payoff in the population"),
                    tabsetPanel(
                    tabPanel("Temporary and Elective",
                             plotOutput("TE"),
