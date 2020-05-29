@@ -205,7 +205,7 @@ navbarPage(title = "Costly Singals",
                      h4("Populations of fixed size"),
                      helpText("Within population groups evolve according to the
                             expected payoff their group earns relative to the
-                            total expected payoff in the population"),
+                            total expected payoff in the population."),
                      tabsetPanel(
                        tabPanel("One population, signaling is temporary and elective",
                                 plotOutput("TE"),
@@ -218,8 +218,8 @@ navbarPage(title = "Costly Singals",
                                      (or lack thereof) are retained between 
                                      each period with the initial type and signal levels
                                      determined by the inputs on the left.")
-                       ),
-                       tabPanel("Two separate populations: One of signalers, the other without signalers",
+                                ),
+                       tabPanel("Two separate populations: One of signalers, the other with non-signalers",
                                 plotOutput("SepPop"),
                                 plotOutput("SepPay"),
                                 plotOutput("SepGroup"),
@@ -233,7 +233,20 @@ navbarPage(title = "Costly Singals",
                                        As a result, most paramaterizations result in non-signal populations initially experiencing higher payoffs (since the proportion of high types start at the same level), 
                                        followed by a period where the signaling population experiences higher payoffs due to the larger proportion of high types,
                                        ending with the non-signaling population surpassing the signaling population as the evolution of that group catches up.")
-                       )
+                                ),
+                       tabPanel("Two separate populations: One of signalers, the other with non-signalers. They join to form one population at period T/2.",
+                                plotOutput("JoinPop"),
+                                plotOutput("JoinPay"),
+                                plotOutput("JoinGroup"),
+                                helpText("Here I reduce each group to half it's size when the groups join at period T/2 to maintain the a fixed population size.")
+                                )
+                     ),
+                     h4("Populations with variable size"),
+                     helpText("It may be reasonable to think that when a population has higher payoffs that the population capacity also increases.
+                              For simplicity I will just specify that population size = average payoff in the population. Again, within population groups evolve according to the
+                            expected payoff their group earns relative to the total expected payoff in the population."),
+                     tabsetPanel(
+                       tabPanel("Will change this panel to a toggel in the input panel.")
                      ),
                      position = "left"
                    )
@@ -241,7 +254,7 @@ navbarPage(title = "Costly Singals",
                )
              ),
              tabPanel("Discrete Quality"
-                      ),
+             ),
              tabPanel("Continuous Quality"
                       )
            )
