@@ -200,24 +200,37 @@ navbarPage(title = "Costly Singals",
                    )
                  ),
                  mainPanel(
-                   h4("One population of fixed size"),
+                   h4("Populations of fixed size"),
                    helpText("Within population groups evolve according to the
                             expected payoff their group earns relative to the
                             total expected payoff in the population"),
                    tabsetPanel(
-                   tabPanel("Temporary and Elective",
-                            plotOutput("TE"),
-                            helpText("In this scenario, at the start of each period each individual
+                     tabPanel("One population, signaling is temporary and elective",
+                              plotOutput("TE"),
+                              helpText("In this scenario, at the start of each period each individual
                                      can decide if they would like to signal or not.")
-                   ),
-                   tabPanel("Permanent and Appointed",
-                            plotOutput("PA"),
-                            helpText("In this scenario, both type and signal 
+                     ),
+                     tabPanel("One populaton, signaling is permanent and appointed",
+                              plotOutput("PA"),
+                              helpText("In this scenario, both type and signal 
                                      (or lack thereof) are retained between 
                                      each period with the initial type and signal levels
                                      determined by the inputs on the left.")
-                 )),
-                 position = "left"
+                     ),
+                     tabPanel("Two separate populations: One of signalers, the other without signalers",
+                              plotOutput("SepPop"),
+                              plotOutput("SepPay"),
+                              plotOutput("SepGroup"),
+                              helpText("Here, the signal reduces the payoffs to both the low and high types. 
+                                   However, since the cost of the signal is flat and high types have higher payoffs than low types,
+                                   the low types are hurt more than the high types by the signal. This combined with the restriction
+                                   that population size remains fixed means that high types evolve faster under a signal. This can result in the signaling population
+                                   experiencing higher payoffs in the short run than the non-signaling population. However, as high types
+                                   evolve in both populations there comes a point where the greater proportion of high types in the signaling
+                                   population doesn't make up for the cost of the signaling meaning the no signaling population experiences higher payoffs.")
+                     )
+                   ),
+                   position = "left"
                  )
                )
              )
