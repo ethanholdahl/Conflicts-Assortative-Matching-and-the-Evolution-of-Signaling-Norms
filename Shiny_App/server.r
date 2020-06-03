@@ -259,6 +259,61 @@ function(input, output, session) {
     list(pop, fitness, group_pay)
   }
   
+  evo_apart_high = function(ratio, vHH, vHL, vLH, vLL, K, time){
+    H_N = ratio
+    H_S = ratio
+    L_N = 1-ratio
+    L_S = 1-ratio
+    pop = data.frame(H_N,H_S,L_N,L_S)
+    SHH = max(vHH - K, 0)
+    SHL = max(vHL - K, 0)
+    SLH = max(vLH - K, 0)
+    SLL = max(vLL - K, 0)
+    payoffs = data.frame(vHH,vHL,vLH,vLL,SHH,SHL,SLH,SLL)
+    fitness = data.frame()
+    for(i in 1:time){
+      H_N = as.numeric(tail(pop,1)[1])
+      H_S = as.numeric(tail(pop,1)[2])
+      L_N = as.numeric(tail(pop,1)[3])
+      L_S = as.numeric(tail(pop,1)[4])
+      H_N_P = H_N*(H_N*as.numeric(payoffs[1])+L_N*as.numeric(payoffs[2]))
+      H_S_P = SHH*H_S
+      L_N_P = L_N*(H_N*as.numeric(payoffs[3])+L_N*as.numeric(payoffs[4]))
+      L_S_P = vLL*L_S
+      Total_N_P = H_N_P+L_N_P
+      Total_S_P = H_S_P+L_S_P
+      H_N = H_N_P/Total_N_P
+      H_S = H_S_P/Total_S_P
+      L_N = L_N_P/Total_N_P
+      L_S = L_S_P/Total_S_P
+      fitness1 = data.frame(H_N_P,H_S_P,L_N_P,L_S_P)
+      fitness = rbind(fitness, fitness1)
+      pop1 = data.frame(H_N,H_S,L_N,L_S)
+      pop = rbind(pop, pop1)
+    }
+    group_pay = pop[2:(time+1),]*fitness
+    group_pay = group_pay %>%
+      mutate(No_Signal = H_N+L_N,
+             Signal = H_S+L_S,
+             t = 1:time) %>%
+      gather("Signal", "No_Signal", key = Population, value = Payoff)
+    pop = pop %>%
+      rename(High_No_Signal = H_N,
+             High_Signal = H_S,
+             Low_No_Signal = L_N,
+             Low_Signal = L_S) %>%
+      mutate(t = 0:time) %>%
+      gather("High_No_Signal", "High_Signal", "Low_No_Signal", "Low_Signal", key = Type, value = Proportion)
+    fitness = fitness %>%
+      rename(High_No_Signal = H_N_P,
+             High_Signal = H_S_P,
+             Low_No_Signal = L_N_P,
+             Low_Signal = L_S_P) %>%
+      mutate(t = 1:time) %>%
+      gather("High_No_Signal", "High_Signal", "Low_No_Signal", "Low_Signal", key = Type, value = Payoff)
+    list(pop, fitness, group_pay)
+  }
+  
   pop_evo_elect = reactive({
     evo_elect(input$ratio, input$vHH, input$vHL, input$vLH, input$vLL, input$K, input$time)
   })
@@ -326,6 +381,25 @@ function(input, output, session) {
       geom_line()+
       geom_vline(xintercept = ceiling(input$time/2))+
       geom_vline(xintercept = ceiling(input$time/2)+1)
+  })
+  
+  pop_evo_A_H = reactive({
+    evo_apart_high(input$ratio, input$vHH, input$vHL, input$vLH, input$vLL, input$K, input$time)
+  })
+  
+  output$SepPopH = renderPlot({
+    ggplot(data = pop_evo_A_H()[[1]], aes(x = t, y = Proportion, color = Type)) +
+      geom_line()
+  })
+  
+  output$SepPayH = renderPlot({
+    ggplot(data = pop_evo_A_H()[[2]], aes(x = t, y = Payoff, color = Type))+
+      geom_line()
+  })
+  
+  output$SepGroupH = renderPlot({
+    ggplot(data = pop_evo_A_H()[[3]], aes(x = t, y = Payoff, color = Population))+
+      geom_line()
   })
 }
   

@@ -199,18 +199,22 @@ navbarPage(title = "Costly Singals",
                        max = 1,
                        step = .01,
                        value = 0
-                     )
+                     ),
+                     checkboxInput("varPop",
+                                   label = "Allow population size to vary according to average payoff?",
+                                   value = FALSE)
                    ),
                    mainPanel(
-                     h4("Populations of fixed size"),
+                     h4("Population Dynamics"),
                      helpText("Within population groups evolve according to the
                             expected payoff their group earns relative to the
                             total expected payoff in the population."),
                      tabsetPanel(
                        tabPanel("One population, signaling is temporary and elective",
                                 plotOutput("TE"),
-                                helpText("In this scenario, at the start of each period each individual
-                                     can decide if they would like to signal or not.")
+                                helpText("In this scenario, at the start of each period individual decide
+                                     as a group if they would like to signal or not. This represents optimal behavior.
+                                         If individuals have no coordination at all the high types would never stop signaling.")
                        ),
                        tabPanel("One populaton, signaling is permanent and appointed",
                                 plotOutput("PA"),
@@ -219,43 +223,40 @@ navbarPage(title = "Costly Singals",
                                      each period with the initial type and signal levels
                                      determined by the inputs on the left.")
                                 ),
-                       tabPanel("Two separate populations: One of signalers, the other with non-signalers",
+                       tabPanel("Two separate populations: One where everyone signals, the other where no one signals",
                                 plotOutput("SepPop"),
                                 plotOutput("SepPay"),
                                 plotOutput("SepGroup"),
-                                helpText("Here, the signal reduces the payoffs to both the low and high types. 
+                                helpText("Here the signal reduces the payoffs to both the low and high types. 
                                    However, since the cost of the signal is flat and high types have higher payoffs than low types,
-                                   the low types are hurt more than the high types by the signal. This combined with the restriction
-                                   that population size remains fixed means that high types evolve faster under a signal. This can result in periods 
+                                   the low types are hurt more than the high types by the signal. This means that high types evolve faster under a signal. This can result in periods 
                                    where the signaling population experiencs higher payoffs than the non-signaling population. However, as high types
                                    evolve in both populations there comes a point where the greater proportion of high types in the signaling
                                    population doesn't make up for the cost of the signaling meaning the no signaling population experiences higher payoffs.
                                        As a result, most paramaterizations result in non-signal populations initially experiencing higher payoffs (since the proportion of high types start at the same level), 
                                        followed by a period where the signaling population experiences higher payoffs due to the larger proportion of high types,
                                        ending with the non-signaling population surpassing the signaling population as the evolution of that group catches up.")
-                                ),
-                       tabPanel("Two separate populations: One of signalers, the other with non-signalers. They join to form one population at period T/2.",
+                       ),
+                       tabPanel("Two separate populations: One where everyone signals, the other where no one signals. They join to form one population at period T/2.",
                                 plotOutput("JoinPop"),
                                 plotOutput("JoinPay"),
                                 plotOutput("JoinGroup"),
                                 helpText("Here I reduce each group to half it's size when the groups join at period T/2 to maintain the a fixed population size.")
-                                )
-                     ),
-                     h4("Populations with variable size"),
-                     helpText("It may be reasonable to think that when a population has higher payoffs that the population capacity also increases.
-                              For simplicity I will just specify that population size = average payoff in the population. Again, within population groups evolve according to the
-                            expected payoff their group earns relative to the total expected payoff in the population."),
-                     tabsetPanel(
-                       tabPanel("Will change this panel to a toggel in the input panel.")
-                     ),
-                     position = "left"
+                       ),
+                       tabPanel("Two spereate populations: One where only high types signal, the other where on one signals",
+                                plotOutput("SepPopH"),
+                                plotOutput("SepPayH"),
+                                plotOutput("SepGroupH"),
+                                helpText("Here")
+                       )
+                     )
                    )
                  )
+               ),
+               tabPanel("Discrete Quality"
+               ),
+               tabPanel("Continuous Quality"
                )
-             ),
-             tabPanel("Discrete Quality"
-             ),
-             tabPanel("Continuous Quality"
-                      )
+             )
            )
 )
