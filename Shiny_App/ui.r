@@ -243,7 +243,7 @@ navbarPage(title = "Costly Singals",
                                 plotOutput("JoinGroup"),
                                 helpText("Here I reduce each group to half it's size when the groups join at period T/2 to maintain the a fixed population size.")
                        ),
-                       tabPanel("Two spereate populations: One where only high types signal, the other where on one signals",
+                       tabPanel("Two spereate populations: One where only high types signal, the other where no one signals",
                                 plotOutput("SepPopH"),
                                 plotOutput("SepPayH"),
                                 plotOutput("SepGroupH"),
