@@ -115,34 +115,34 @@ navbarPage(title = "Costly Singals",
                      sliderInput(
                        "vHH",
                        label = "V(H,H):",
-                       min = 4,
-                       max = 100,
-                       step = 1,
-                       value = 20
+                       min = 0,
+                       max = 3,
+                       step = .01,
+                       value = 1.2
                      ),
                      sliderInput(
                        "vHL",
                        label = "V(H,L):",
-                       min = 2,
-                       max = 100,
-                       step = 1,
-                       value = 15
+                       min = 0,
+                       max = 3,
+                       step = .01,
+                       value = 1.1
                      ),
                      sliderInput(
                        "vLL",
                        label = "V(L,L):",
-                       min = 1,
-                       max = 100,
-                       step = 1,
-                       value = 10
+                       min = 0,
+                       max = 3,
+                       step = .01,
+                       value = .9
                      ),
                      sliderInput(
                        "vLH",
                        label = "V(L,H):",
-                       min = 1,
-                       max = 100,
-                       step = 1,
-                       value = 12
+                       min = 0,
+                       max = 3,
+                       step = .01,
+                       value = .95
                      ),
                      sliderInput(
                        "ratio",
@@ -156,9 +156,9 @@ navbarPage(title = "Costly Singals",
                        "K",
                        label = "The cost of signaling \\(K\\)",
                        min = 0,
-                       max = 100,
-                       step = .1,
-                       value = 3
+                       max = 2,
+                       step = .01,
+                       value = .1
                      ),
                      sliderInput(
                        "time",
@@ -247,7 +247,13 @@ navbarPage(title = "Costly Singals",
                                 plotOutput("SepPopH"),
                                 plotOutput("SepPayH"),
                                 plotOutput("SepGroupH"),
-                                helpText("Here")
+                                helpText("Add Text Here")
+                       ),
+                       tabPanel("Two spereate populations: One where only high types signal, the other where no one signals. They join to form one population at period T/2.",
+                                plotOutput("JoinPopH"),
+                                plotOutput("JoinPayH"),
+                                plotOutput("JoinGroupH"),
+                                helpText("Add Text Here")
                        )
                      )
                    )

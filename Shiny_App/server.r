@@ -9,19 +9,19 @@ function(input, output, session) {
   
   observeEvent(input$vHH, {
     vHH = input$vHH
-    updateSliderInput(session, "vHL", min = 2, max = vHH -2)
+    updateSliderInput(session, "vHL", min = .01, max = vHH -.02)
   })
   
   observeEvent(input$vHL, {
     vHL = input$vHL
-    updateSliderInput(session, "vLL", min = 1, max = vHL -1)
+    updateSliderInput(session, "vLL", min = 0, max = vHL -.01)
   })
   
   observeEvent(c(input$vHL, input$vHH, input$vLL), {
     vHL = input$vHL
     vHH = input$vHH
     vLL = input$vLL
-    updateSliderInput(session, "vLH", min = 1, max = vHH+vLL-vHL-1)
+    updateSliderInput(session, "vLH", min = 0, max = vHH+vLL-vHL-.01)
   })
   
   observeEvent(c(input$A, input$vHH, input$vHL, input$vLH, input$vLL), {
