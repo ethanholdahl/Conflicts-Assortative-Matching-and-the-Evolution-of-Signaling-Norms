@@ -103,11 +103,9 @@ navbarPage(title = "Costly Singals",
                    br(),
                    "4. Time horizon \\(T\\)",
                    br(),
-                   "5. (forthcoming) Discount rate \\(\\delta\\)",
+                   "5. (If applicable) \\(H_{0,S}, L_{0,S}\\): The initial proportion of high and low type signaling",
                    br(),
-                   "6. (forthcoming) Mutation rate \\(\\epsilon\\)",
-                   br(),
-                   "7. (If applicable) \\(H_{0,S}, L_{0,S}\\): The initial proportion of high and low type signaling"
+                   "6. How the size of the population evolves"
                  ),
                  br(),
                  sidebarLayout(
@@ -158,7 +156,7 @@ navbarPage(title = "Costly Singals",
                        min = 0,
                        max = 2,
                        step = .01,
-                       value = .1
+                       value = .07
                      ),
                      sliderInput(
                        "time",
@@ -167,22 +165,6 @@ navbarPage(title = "Costly Singals",
                        max = 100,
                        step = 1,
                        value = 20
-                     ),
-                     sliderInput(
-                       "delta",
-                       label = "Depreciation \\(\\delta\\):",
-                       min = 0,
-                       max = 1,
-                       step = .01,
-                       value = .05
-                     ),
-                     sliderInput(
-                       "epsilon",
-                       label = "Mutation rate \\(\\epsilon\\):",
-                       min = 0,
-                       max = 1,
-                       step = .0001,
-                       value = 0
                      ),
                      sliderInput(
                        "ratio_h",
@@ -200,9 +182,10 @@ navbarPage(title = "Costly Singals",
                        step = .01,
                        value = 0
                      ),
-                     checkboxInput("varPop",
-                                   label = "Allow population size to vary according to average payoff?",
-                                   value = FALSE)
+                     radioButtons("pop_grow",
+                                   label = "Select how the size of the population evolves",
+                                  choices = c("Fixed population", "Unbounded exponential growth", "Logistic growth to capacity"),
+                                   selected = "Fixed population")
                    ),
                    mainPanel(
                      h4("Population Dynamics"),

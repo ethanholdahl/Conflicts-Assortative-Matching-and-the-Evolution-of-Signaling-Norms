@@ -30,7 +30,7 @@ function(input, output, session) {
     vLH = input$vLH
     vLL = input$vLL
     K = input$K
-    updateSliderInput(session, "K", min = max(0, vLH-vLL), max = vHH-vHL)
+    updateSliderInput(session, "K", min = round(max(0, vLH-vLL),2), max = round(vHH-vHL,2))
   })
 
   evo = function(ratio, ratio_h, ratio_l, vHH, vHL, vLH, vLL, K, time){

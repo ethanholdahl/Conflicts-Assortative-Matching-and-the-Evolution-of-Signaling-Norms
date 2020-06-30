@@ -1,17 +1,19 @@
 library("tidyverse", "shiny", "stringr")
 
 time = 30
-vHH = 100
-vHL = 90
-vLH = 90
-vLL = 70
-K = 5
+vHH =1.1
+vHL = 1.05
+vLH = .95
+vLL = .9
+K = .02
 ratio = .2
 ratio_l = 0
-ratio_h = .2
-fixed = TRUE
+ratio_h = .5
+pop_grow = "Unbounded exponential growth"
 
-evo = function(ratio, ratio_h, ratio_l, vHH, vHL, vLH, vLL, K, time, fixed){
+#"Fixed population", "Unbounded exponential growth", "Logistic growth to capacity"
+
+evo = function(ratio, ratio_h, ratio_l, vHH, vHL, vLH, vLL, K, time, pop_grow){
   H_N = (1-ratio_h)*ratio
   H_S = ratio_h*ratio
   L_N = (1-ratio_l)*(1-ratio)
@@ -22,6 +24,7 @@ evo = function(ratio, ratio_h, ratio_l, vHH, vHL, vLH, vLL, K, time, fixed){
   SLH = max(vLH - K, 0)
   SLL = max(vLL - K, 0)
   payoffs = data.frame(vHH,vHL,vLH,vLL,SHH,SHL,SLH,SLL)
+  expected_payoffs = data.frame()
   for(i in 1:time){
     H_N = as.numeric(tail(pop,1)[1])
     H_S = as.numeric(tail(pop,1)[2])
@@ -37,13 +40,16 @@ evo = function(ratio, ratio_h, ratio_l, vHH, vHL, vLH, vLL, K, time, fixed){
     H_S_P = H_S*(S_H*as.numeric(payoffs[5])+S_L*as.numeric(payoffs[6]))
     L_N_P = L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4]))
     L_S_P = L_S*(S_H*as.numeric(payoffs[7])+S_L*as.numeric(payoffs[8]))
-    if (fixed == TRUE){
+    if (pop_grow == "Fixed population"){
       Total_P = H_N_P+H_S_P+L_N_P+L_S_P
+      expected_payoffs1 = data.frame(High_No_Signal = H_N_P/(H_N*Total_P), High_Signal = H_S_P/(H_S*Total_P), Low_No_Signal = L_N_P/(L_N*Total_P), Low_Signal = L_S_P/(L_S*Total_P))
       H_N = H_N_P/Total_P
       H_S = H_S_P/Total_P
       L_N = L_N_P/Total_P
       L_S = L_S_P/Total_P
-    } else {
+    }
+    if (pop_grow == "Unbounded exponential growth") {
+      expected_payoffs1 = data.frame(High_No_Signal = H_N_P/H_N, High_Signal = H_S_P/H_S, Low_No_Signal = L_N_P/L_N, Low_Signal = L_S_P/L_S)
       Total_P = H_N_P+H_S_P+L_N_P+L_S_P
       H_N = H_N_P
       H_S = H_S_P
@@ -52,21 +58,37 @@ evo = function(ratio, ratio_h, ratio_l, vHH, vHL, vLH, vLL, K, time, fixed){
     }
     pop1 = data.frame(H_N,H_S,L_N,L_S)
     pop = rbind(pop, pop1)
+    expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
   }
+  
+  growth = (expected_payoffs-1)*pop[2:(time+1),] 
+  growth = growth %>%
+    mutate(t = 1:time) %>%
+    gather("High_No_Signal", "High_Signal", "Low_No_Signal", "Low_Signal", key = Type, value = "Growth")
+  
   pop = pop %>%
     rename(High_No_Signal = H_N,
            High_Signal = H_S,
            Low_No_Signal = L_N,
            Low_Signal = L_S) %>%
     mutate(t = 0:time) %>%
-    gather("High_No_Signal", "High_Signal", "Low_No_Signal", "Low_Signal", key = Type, value = Proportion)
+    gather("High_No_Signal", "High_Signal", "Low_No_Signal", "Low_Signal", key = Type, value = "Population")
+  expected_payoffs = expected_payoffs %>%
+    mutate(t = 1:time) %>%
+    gather("High_No_Signal", "High_Signal", "Low_No_Signal", "Low_Signal", key = Type, value = "Growth_Rate")
+  list(pop, expected_payoffs, growth)
 }
 
-pop_evo = evo(ratio, ratio_h, ratio_l, vHH, vHL, vLH, vLL, K, time, TRUE)
+pop_evo = evo(ratio, ratio_h, ratio_l, vHH, vHL, vLH, vLL, K, time, "Unbounded exponential growth")
 
-ggplot(data = pop_evo, aes(x = t, y = Proportion, color = Type)) +
+ggplot(data = pop_evo[[1]], aes(x = t, y = Population, color = Type)) +
   geom_line()
 
+ggplot(data = pop_evo[[2]], aes(x = t, y = Growth_Rate, color = Type)) +
+  geom_line()
+
+ggplot(data = pop_evo[[3]], aes(x = t, y = Growth, color = Type)) +
+  geom_line()
 
 evo_elect = function(ratio, vHH, vHL, vLH, vLL, K, time){
   SHH = max(vHH - K, 0)
