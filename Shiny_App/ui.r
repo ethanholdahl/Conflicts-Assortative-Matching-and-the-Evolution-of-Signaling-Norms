@@ -190,8 +190,7 @@ navbarPage(title = "Costly Singals",
                    mainPanel(
                      h4("Population Dynamics"),
                      helpText("Within population groups evolve according to the
-                            expected payoff their group earns relative to the
-                            total expected payoff in the population."),
+                            growth scenario selected. Note: Logistic not yet operational."),
                      tabsetPanel(
                        tabPanel("One population, signaling is temporary and elective",
                                 plotOutput("TE"),
@@ -200,16 +199,18 @@ navbarPage(title = "Costly Singals",
                                          If individuals have no coordination at all the high types would never stop signaling.")
                        ),
                        tabPanel("One populaton, signaling is permanent and appointed",
-                                plotOutput("PA"),
+                                plotOutput("PA_P"),
+                                plotOutput("PA_R"),
+                                plotOutput("PA_G"),
                                 helpText("In this scenario, both type and signal 
                                      (or lack thereof) are retained between 
                                      each period with the initial type and signal levels
                                      determined by the inputs on the left.")
                                 ),
                        tabPanel("Two separate populations: One where everyone signals, the other where no one signals",
-                                plotOutput("SepPop"),
-                                plotOutput("SepPay"),
-                                plotOutput("SepGroup"),
+                                plotOutput("Sep_P"),
+                                plotOutput("Sep_R"),
+                                plotOutput("Sep_G"),
                                 helpText("Here the signal reduces the payoffs to both the low and high types. 
                                    However, since the cost of the signal is flat and high types have higher payoffs than low types,
                                    the low types are hurt more than the high types by the signal. This means that high types evolve faster under a signal. This can result in periods 
@@ -227,9 +228,9 @@ navbarPage(title = "Costly Singals",
                                 helpText("Here I reduce each group to half it's size when the groups join at period T/2 to maintain the a fixed population size.")
                        ),
                        tabPanel("Two spereate populations: One where only high types signal, the other where no one signals",
-                                plotOutput("SepPopH"),
-                                plotOutput("SepPayH"),
-                                plotOutput("SepGroupH"),
+                                plotOutput("SepH_P"),
+                                plotOutput("SepH_R"),
+                                plotOutput("SepH_G"),
                                 helpText("Add Text Here")
                        ),
                        tabPanel("Two spereate populations: One where only high types signal, the other where no one signals. They join to form one population at period T/2.",

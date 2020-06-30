@@ -33,7 +33,7 @@ function(input, output, session) {
     updateSliderInput(session, "K", min = round(max(0, vLH-vLL),2), max = round(vHH-vHL,2))
   })
 
-  evo = function(ratio, ratio_h, ratio_l, vHH, vHL, vLH, vLL, K, time){
+  evo = function(ratio, ratio_h, ratio_l, vHH, vHL, vLH, vLL, K, time, pop_grow){
     H_N = (1-ratio_h)*ratio
     H_S = ratio_h*ratio
     L_N = (1-ratio_l)*(1-ratio)
@@ -44,6 +44,7 @@ function(input, output, session) {
     SLH = max(vLH - K, 0)
     SLL = max(vLL - K, 0)
     payoffs = data.frame(vHH,vHL,vLH,vLL,SHH,SHL,SLH,SLL)
+    expected_payoffs = data.frame()
     for(i in 1:time){
       H_N = as.numeric(tail(pop,1)[1])
       H_S = as.numeric(tail(pop,1)[2])
@@ -59,21 +60,43 @@ function(input, output, session) {
       H_S_P = H_S*(S_H*as.numeric(payoffs[5])+S_L*as.numeric(payoffs[6]))
       L_N_P = L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4]))
       L_S_P = L_S*(S_H*as.numeric(payoffs[7])+S_L*as.numeric(payoffs[8]))
-      Total_P = H_N_P+H_S_P+L_N_P+L_S_P
-      H_N = H_N_P/Total_P
-      H_S = H_S_P/Total_P
-      L_N = L_N_P/Total_P
-      L_S = L_S_P/Total_P
+      if (pop_grow == "Fixed population"){
+        Total_P = H_N_P+H_S_P+L_N_P+L_S_P
+        expected_payoffs1 = data.frame(High_No_Signal = H_N_P/(H_N*Total_P), High_Signal = H_S_P/(H_S*Total_P), Low_No_Signal = L_N_P/(L_N*Total_P), Low_Signal = L_S_P/(L_S*Total_P))
+        H_N = H_N_P/Total_P
+        H_S = H_S_P/Total_P
+        L_N = L_N_P/Total_P
+        L_S = L_S_P/Total_P
+      }
+      if (pop_grow == "Unbounded exponential growth") {
+        expected_payoffs1 = data.frame(High_No_Signal = H_N_P/H_N, High_Signal = H_S_P/H_S, Low_No_Signal = L_N_P/L_N, Low_Signal = L_S_P/L_S)
+        H_N = H_N_P
+        H_S = H_S_P
+        L_N = L_N_P
+        L_S = L_S_P
+      }
       pop1 = data.frame(H_N,H_S,L_N,L_S)
       pop = rbind(pop, pop1)
+      expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
     }
+    
+    growth = (expected_payoffs-1)*pop[2:(time+1),] 
+    growth = growth %>%
+      mutate(t = 1:time) %>%
+      gather("High_No_Signal", "Low_No_Signal", "High_Signal", "Low_Signal", key = Type, value = "Growth")
+    
     pop = pop %>%
       rename(High_No_Signal = H_N,
              High_Signal = H_S,
              Low_No_Signal = L_N,
              Low_Signal = L_S) %>%
       mutate(t = 0:time) %>%
-      gather("High_No_Signal", "High_Signal", "Low_No_Signal", "Low_Signal", key = Type, value = Proportion)
+      gather("High_No_Signal", "Low_No_Signal", "High_Signal", "Low_Signal", key = Type, value = "Population")
+    
+    expected_payoffs = expected_payoffs %>%
+      mutate(t = 1:time) %>%
+      gather("High_No_Signal", "Low_No_Signal", "High_Signal", "Low_Signal", key = Type, value = "Growth_Rate")
+    list(pop, expected_payoffs, growth)
   }
   
   evo_elect = function(ratio, vHH, vHL, vLH, vLL, K, time){
@@ -120,7 +143,7 @@ function(input, output, session) {
     pop
   }
   
-  evo_apart = function(ratio, vHH, vHL, vLH, vLL, K, time){
+  evo_apart = function(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow){
     H_N = ratio
     H_S = ratio
     L_N = 1-ratio
@@ -131,48 +154,67 @@ function(input, output, session) {
     SLH = max(vLH - K, 0)
     SLL = max(vLL - K, 0)
     payoffs = data.frame(vHH,vHL,vLH,vLL,SHH,SHL,SLH,SLL)
-    fitness = data.frame()
+    expected_payoffs = data.frame()
+    group_payoffs = data.frame()
     for(i in 1:time){
       H_N = as.numeric(tail(pop,1)[1])
       H_S = as.numeric(tail(pop,1)[2])
       L_N = as.numeric(tail(pop,1)[3])
       L_S = as.numeric(tail(pop,1)[4])
-      H_N_P = H_N*(H_N*as.numeric(payoffs[1])+L_N*as.numeric(payoffs[2]))
-      H_S_P = H_S*(H_S*as.numeric(payoffs[5])+L_S*as.numeric(payoffs[6]))
-      L_N_P = L_N*(H_N*as.numeric(payoffs[3])+L_N*as.numeric(payoffs[4]))
-      L_S_P = L_S*(H_S*as.numeric(payoffs[7])+L_S*as.numeric(payoffs[8]))
-      Total_N_P = H_N_P+L_N_P
-      Total_S_P = H_S_P+L_S_P
-      H_N = H_N_P/Total_N_P
-      H_S = H_S_P/Total_S_P
-      L_N = L_N_P/Total_N_P
-      L_S = L_S_P/Total_S_P
-      fitness1 = data.frame(H_N_P,H_S_P,L_N_P,L_S_P)
-      fitness = rbind(fitness, fitness1)
+      S_H = if(H_S+L_S>0){
+        H_S/(H_S+L_S)} else {0}
+      S_L = 1-S_H
+      N_H = if(H_N+L_N>0){
+        H_N/(H_N+L_N)} else {0}
+      N_L = 1-N_H
+      H_N_P = H_N*(N_H*as.numeric(payoffs[1])+N_L*as.numeric(payoffs[2]))
+      H_S_P = H_S*(S_H*as.numeric(payoffs[5])+S_L*as.numeric(payoffs[6]))
+      L_N_P = L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4]))
+      L_S_P = L_S*(S_H*as.numeric(payoffs[7])+S_L*as.numeric(payoffs[8]))
+      if (pop_grow == "Fixed population"){
+        Total_N_P = H_N_P+L_N_P
+        Total_S_P = H_S_P+L_S_P
+        expected_payoffs1 = data.frame(High_No_Signal = H_N_P/(H_N*Total_N_P), High_Signal = H_S_P/(H_S*Total_S_P), Low_No_Signal = L_N_P/(L_N*Total_N_P), Low_Signal = L_S_P/(L_S*Total_S_P))
+        H_N = H_N_P/Total_N_P
+        H_S = H_S_P/Total_S_P
+        L_N = L_N_P/Total_N_P
+        L_S = L_S_P/Total_S_P
+      }
+      if (pop_grow == "Unbounded exponential growth") {
+        expected_payoffs1 = data.frame(High_No_Signal = H_N_P/H_N, High_Signal = H_S_P/H_S, Low_No_Signal = L_N_P/L_N, Low_Signal = L_S_P/L_S)
+        H_N = H_N_P
+        H_S = H_S_P
+        L_N = L_N_P
+        L_S = L_S_P
+      }
       pop1 = data.frame(H_N,H_S,L_N,L_S)
       pop = rbind(pop, pop1)
+      group_payoffs1 = data.frame(No_Signal = expected_payoffs1[[1]]*N_H + expected_payoffs1[[3]]*N_L, Signal = expected_payoffs1[[2]]*S_H + expected_payoffs1[[4]]*S_L)
+      group_payoffs = rbind(group_payoffs, group_payoffs1)
+      expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
     }
-    group_pay = pop[2:(time+1),]*fitness
-    group_pay = group_pay %>%
-      mutate(No_Signal = H_N+L_N,
-             Signal = H_S+L_S,
-             t = 1:time) %>%
-      gather("Signal", "No_Signal", key = Population, value = Payoff)
+    growth = (expected_payoffs-1)*pop[2:(time+1),] 
+    growth = growth %>%
+      mutate(t = 1:time,
+             Signal = High_Signal + Low_Signal,
+             No_Signal = High_No_Signal + Low_No_Signal) %>%
+      gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Growth")
+    
     pop = pop %>%
       rename(High_No_Signal = H_N,
              High_Signal = H_S,
              Low_No_Signal = L_N,
              Low_Signal = L_S) %>%
-      mutate(t = 0:time) %>%
-      gather("High_No_Signal", "High_Signal", "Low_No_Signal", "Low_Signal", key = Type, value = Proportion)
-    fitness = fitness %>%
-      rename(High_No_Signal = H_N_P,
-             High_Signal = H_S_P,
-             Low_No_Signal = L_N_P,
-             Low_Signal = L_S_P) %>%
+      mutate(t = 0:time,
+             Signal = High_Signal + Low_Signal,
+             No_Signal = High_No_Signal + Low_No_Signal) %>%
+      gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Population")
+    
+    expected_payoffs = cbind(expected_payoffs,group_payoffs)
+    expected_payoffs = expected_payoffs %>%
       mutate(t = 1:time) %>%
-      gather("High_No_Signal", "High_Signal", "Low_No_Signal", "Low_Signal", key = Type, value = Payoff)
-    list(pop, fitness, group_pay)
+      gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Growth_Rate")
+    list(pop, expected_payoffs, growth)
   }
   
   evo_join = function(ratio, vHH, vHL, vLH, vLL, K, time){
@@ -259,7 +301,7 @@ function(input, output, session) {
     list(pop, fitness, group_pay)
   }
   
-  evo_apart_high = function(ratio, vHH, vHL, vLH, vLL, K, time){
+  evo_apart_high = function(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow){
     H_N = ratio
     H_S = ratio
     L_N = 1-ratio
@@ -270,48 +312,67 @@ function(input, output, session) {
     SLH = max(vLH - K, 0)
     SLL = max(vLL - K, 0)
     payoffs = data.frame(vHH,vHL,vLH,vLL,SHH,SHL,SLH,SLL)
-    fitness = data.frame()
+    expected_payoffs = data.frame()
+    group_payoffs = data.frame()
     for(i in 1:time){
       H_N = as.numeric(tail(pop,1)[1])
       H_S = as.numeric(tail(pop,1)[2])
       L_N = as.numeric(tail(pop,1)[3])
       L_S = as.numeric(tail(pop,1)[4])
-      H_N_P = H_N*(H_N*as.numeric(payoffs[1])+L_N*as.numeric(payoffs[2]))
+      S_H = if(H_S+L_S>0){
+        H_S/(H_S+L_S)} else {0}
+      S_L = 1-S_H
+      N_H = if(H_N+L_N>0){
+        H_N/(H_N+L_N)} else {0}
+      N_L = 1-N_H
+      H_N_P = H_N*(N_H*as.numeric(payoffs[1])+N_L*as.numeric(payoffs[2]))
       H_S_P = SHH*H_S
-      L_N_P = L_N*(H_N*as.numeric(payoffs[3])+L_N*as.numeric(payoffs[4]))
+      L_N_P = L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4]))
       L_S_P = vLL*L_S
-      Total_N_P = H_N_P+L_N_P
-      Total_S_P = H_S_P+L_S_P
-      H_N = H_N_P/Total_N_P
-      H_S = H_S_P/Total_S_P
-      L_N = L_N_P/Total_N_P
-      L_S = L_S_P/Total_S_P
-      fitness1 = data.frame(H_N_P,H_S_P,L_N_P,L_S_P)
-      fitness = rbind(fitness, fitness1)
+      if (pop_grow == "Fixed population"){
+        Total_N_P = H_N_P+L_N_P
+        Total_S_P = H_S_P+L_S_P
+        expected_payoffs1 = data.frame(High_No_Signal = H_N_P/(H_N*Total_N_P), High_Signal = H_S_P/(H_S*Total_S_P), Low_No_Signal = L_N_P/(L_N*Total_N_P), Low_Signal = L_S_P/(L_S*Total_S_P))
+        H_N = H_N_P/Total_N_P
+        H_S = H_S_P/Total_S_P
+        L_N = L_N_P/Total_N_P
+        L_S = L_S_P/Total_S_P
+      }
+      if (pop_grow == "Unbounded exponential growth") {
+        expected_payoffs1 = data.frame(High_No_Signal = H_N_P/H_N, High_Signal = H_S_P/H_S, Low_No_Signal = L_N_P/L_N, Low_Signal = L_S_P/L_S)
+        H_N = H_N_P
+        H_S = H_S_P
+        L_N = L_N_P
+        L_S = L_S_P
+      }
       pop1 = data.frame(H_N,H_S,L_N,L_S)
       pop = rbind(pop, pop1)
+      group_payoffs1 = data.frame(No_Signal = expected_payoffs1[[1]]*N_H + expected_payoffs1[[3]]*N_L, Signal = expected_payoffs1[[2]]*S_H + expected_payoffs1[[4]]*S_L)
+      group_payoffs = rbind(group_payoffs, group_payoffs1)
+      expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
     }
-    group_pay = pop[2:(time+1),]*fitness
-    group_pay = group_pay %>%
-      mutate(No_Signal = H_N+L_N,
-             Signal = H_S+L_S,
-             t = 1:time) %>%
-      gather("Signal", "No_Signal", key = Population, value = Payoff)
+    growth = (expected_payoffs-1)*pop[2:(time+1),] 
+    growth = growth %>%
+      mutate(t = 1:time,
+             Signal = High_Signal + Low_Signal,
+             No_Signal = High_No_Signal + Low_No_Signal) %>%
+      gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Growth")
+    
     pop = pop %>%
       rename(High_No_Signal = H_N,
              High_Signal = H_S,
              Low_No_Signal = L_N,
              Low_Signal = L_S) %>%
-      mutate(t = 0:time) %>%
-      gather("High_No_Signal", "High_Signal", "Low_No_Signal", "Low_Signal", key = Type, value = Proportion)
-    fitness = fitness %>%
-      rename(High_No_Signal = H_N_P,
-             High_Signal = H_S_P,
-             Low_No_Signal = L_N_P,
-             Low_Signal = L_S_P) %>%
+      mutate(t = 0:time,
+             Signal = High_Signal + Low_Signal,
+             No_Signal = High_No_Signal + Low_No_Signal) %>%
+      gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Population")
+    
+    expected_payoffs = cbind(expected_payoffs,group_payoffs)
+    expected_payoffs = expected_payoffs %>%
       mutate(t = 1:time) %>%
-      gather("High_No_Signal", "High_Signal", "Low_No_Signal", "Low_Signal", key = Type, value = Payoff)
-    list(pop, fitness, group_pay)
+      gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Growth_Rate")
+    list(pop, expected_payoffs, growth)
   }
   
   pop_evo_elect = reactive({
@@ -331,30 +392,40 @@ function(input, output, session) {
   })
   
   pop_evo = reactive({
-    evo(input$ratio, input$ratio_h, input$ratio_l, input$vHH, input$vHL, input$vLH, input$vLL, input$K, input$time)
+    evo(input$ratio, input$ratio_h, input$ratio_l, input$vHH, input$vHL, input$vLH, input$vLL, input$K, input$time, input$pop_grow)
   })
 
-  output$PA = renderPlot({
-    ggplot(data = pop_evo(), aes(x = t, y = Proportion, color = Type)) +
+  output$PA_P = renderPlot({
+    ggplot(data = pop_evo()[[1]], aes(x = t, y = Population, color = Type)) +
       geom_line()
     })
   
+  output$PA_R = renderPlot({
+    ggplot(data = pop_evo()[[2]], aes(x = t, y = Growth_Rate, color = Type)) +
+      geom_line()
+  })
+  
+  output$PA_G = renderPlot({
+    ggplot(data = pop_evo()[[3]], aes(x = t, y = Growth, color = Type)) +
+      geom_line()
+  })
+  
   pop_evo_A = reactive({
-    evo_apart(input$ratio, input$vHH, input$vHL, input$vLH, input$vLL, input$K, input$time)
+    evo_apart(input$ratio, input$vHH, input$vHL, input$vLH, input$vLL, input$K, input$time, input$pop_grow)
   })
   
-  output$SepPop = renderPlot({
-    ggplot(data = pop_evo_A()[[1]], aes(x = t, y = Proportion, color = Type)) +
+  output$Sep_P = renderPlot({
+    ggplot(data = pop_evo_A()[[1]], aes(x = t, y = Population, color = Type)) +
       geom_line()
   })
   
-  output$SepPay = renderPlot({
-    ggplot(data = pop_evo_A()[[2]], aes(x = t, y = Payoff, color = Type))+
+  output$Sep_R = renderPlot({
+    ggplot(data = pop_evo_A()[[2]], aes(x = t, y = Growth_Rate, color = Type))+
       geom_line()
   })
   
-  output$SepGroup = renderPlot({
-    ggplot(data = pop_evo_A()[[3]], aes(x = t, y = Payoff, color = Population))+
+  output$Sep_G = renderPlot({
+    ggplot(data = pop_evo_A()[[3]], aes(x = t, y = Growth, color = Type))+
       geom_line()
   })
   
@@ -384,21 +455,21 @@ function(input, output, session) {
   })
   
   pop_evo_A_H = reactive({
-    evo_apart_high(input$ratio, input$vHH, input$vHL, input$vLH, input$vLL, input$K, input$time)
+    evo_apart_high(input$ratio, input$vHH, input$vHL, input$vLH, input$vLL, input$K, input$time, input$pop_grow)
   })
   
-  output$SepPopH = renderPlot({
-    ggplot(data = pop_evo_A_H()[[1]], aes(x = t, y = Proportion, color = Type)) +
+  output$SepH_P = renderPlot({
+    ggplot(data = pop_evo_A_H()[[1]], aes(x = t, y = Population, color = Type)) +
       geom_line()
   })
   
-  output$SepPayH = renderPlot({
-    ggplot(data = pop_evo_A_H()[[2]], aes(x = t, y = Payoff, color = Type))+
+  output$SepH_R = renderPlot({
+    ggplot(data = pop_evo_A_H()[[2]], aes(x = t, y = Growth_Rate, color = Type))+
       geom_line()
   })
   
-  output$SepGroupH = renderPlot({
-    ggplot(data = pop_evo_A_H()[[3]], aes(x = t, y = Payoff, color = Population))+
+  output$SepH_G = renderPlot({
+    ggplot(data = pop_evo_A_H()[[3]], aes(x = t, y = Growth, color = Type))+
       geom_line()
   })
 }
