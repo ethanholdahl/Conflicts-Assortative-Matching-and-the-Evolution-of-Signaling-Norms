@@ -183,9 +183,15 @@ navbarPage(title = "Costly Singals",
                        value = 0
                      ),
                      radioButtons("pop_grow",
-                                   label = "Select how the size of the population evolves",
+                                  label = "Select how the size of the population evolves",
                                   choices = c("Fixed population", "Unbounded exponential growth", "Logistic growth to capacity"),
-                                   selected = "Fixed population")
+                                  selected = "Fixed population"
+                                  ),
+                     radioButtons("join_scenario",
+                                  label = "When populations join together do they fight or merge?",
+                                  choices = c("Fight", "Merge"),
+                                  selected = "Fight"
+                                  )
                    ),
                    mainPanel(
                      h4("Population Dynamics"),

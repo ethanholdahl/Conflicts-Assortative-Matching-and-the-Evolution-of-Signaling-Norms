@@ -80,10 +80,16 @@ function(input, output, session) {
       expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
     }
     
-    growth = (expected_payoffs-1)*pop[2:(time+1),] 
+    growth = pop[2:(time+1),]-pop[1:time,]
     growth = growth %>%
-      mutate(t = 1:time) %>%
-      gather("High_No_Signal", "Low_No_Signal", "High_Signal", "Low_Signal", key = Type, value = "Growth")
+      rename(High_No_Signal = H_N,
+             High_Signal = H_S,
+             Low_No_Signal = L_N,
+             Low_Signal = L_S) %>%
+      mutate(t = 1:time,
+             Signal = High_Signal + Low_Signal,
+             No_Signal = High_No_Signal + Low_No_Signal) %>%
+      gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Growth")
     
     pop = pop %>%
       rename(High_No_Signal = H_N,
@@ -193,8 +199,12 @@ function(input, output, session) {
       group_payoffs = rbind(group_payoffs, group_payoffs1)
       expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
     }
-    growth = (expected_payoffs-1)*pop[2:(time+1),] 
+    growth = pop[2:(time+1),]-pop[1:time,]
     growth = growth %>%
+      rename(High_No_Signal = H_N,
+             High_Signal = H_S,
+             Low_No_Signal = L_N,
+             Low_Signal = L_S) %>%
       mutate(t = 1:time,
              Signal = High_Signal + Low_Signal,
              No_Signal = High_No_Signal + Low_No_Signal) %>%
@@ -351,8 +361,12 @@ function(input, output, session) {
       group_payoffs = rbind(group_payoffs, group_payoffs1)
       expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
     }
-    growth = (expected_payoffs-1)*pop[2:(time+1),] 
+    growth = pop[2:(time+1),]-pop[1:time,]
     growth = growth %>%
+      rename(High_No_Signal = H_N,
+             High_Signal = H_S,
+             Low_No_Signal = L_N,
+             Low_Signal = L_S) %>%
       mutate(t = 1:time,
              Signal = High_Signal + Low_Signal,
              No_Signal = High_No_Signal + Low_No_Signal) %>%

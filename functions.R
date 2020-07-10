@@ -9,9 +9,10 @@ K = .05
 ratio = .2
 ratio_l = 0
 ratio_h = .5
-pop_grow = "Unbounded exponential growth"
-
+pop_grow = "Fixed population"
 #"Fixed population", "Unbounded exponential growth", "Logistic growth to capacity"
+join_scenario = "Fight"
+#"Fight", "Merge"
 
 evo = function(ratio, ratio_h, ratio_l, vHH, vHL, vLH, vLL, K, time, pop_grow){
   H_N = (1-ratio_h)*ratio
@@ -60,10 +61,16 @@ evo = function(ratio, ratio_h, ratio_l, vHH, vHL, vLH, vLL, K, time, pop_grow){
     expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
   }
   
-  growth = (expected_payoffs-1)*pop[2:(time+1),] 
+  growth = pop[2:(time+1),]-pop[1:time,]
   growth = growth %>%
-    mutate(t = 1:time) %>%
-    gather("High_No_Signal", "Low_No_Signal", "High_Signal", "Low_Signal", key = Type, value = "Growth")
+    rename(High_No_Signal = H_N,
+           High_Signal = H_S,
+           Low_No_Signal = L_N,
+           Low_Signal = L_S) %>%
+    mutate(t = 1:time,
+           Signal = High_Signal + Low_Signal,
+           No_Signal = High_No_Signal + Low_No_Signal) %>%
+    gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Growth")
   
   pop = pop %>%
     rename(High_No_Signal = H_N,
@@ -198,8 +205,12 @@ evo_apart = function(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow){
     group_payoffs = rbind(group_payoffs, group_payoffs1)
     expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
   }
-  growth = (expected_payoffs-1)*pop[2:(time+1),] 
+  growth = pop[2:(time+1),]-pop[1:time,]
   growth = growth %>%
+    rename(High_No_Signal = H_N,
+           High_Signal = H_S,
+           Low_No_Signal = L_N,
+           Low_Signal = L_S) %>%
     mutate(t = 1:time,
            Signal = High_Signal + Low_Signal,
            No_Signal = High_No_Signal + Low_No_Signal) %>%
@@ -235,7 +246,7 @@ ggplot(data = rate_evo_A, aes(x = t, y = Growth_Rate, color = Type))+
 ggplot(data = grow_evo_A, aes(x = t, y = Growth, color = Type))+
   geom_line()
 
-evo_join = function(ratio, vHH, vHL, vLH, vLL, K, time){
+evo_join = function(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow, join_scenario){
   H_N = ratio
   H_S = ratio
   L_N = 1-ratio
@@ -377,8 +388,12 @@ evo_apart_high = function(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow){
     group_payoffs = rbind(group_payoffs, group_payoffs1)
     expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
   }
-  growth = (expected_payoffs-1)*pop[2:(time+1),] 
+  growth = pop[2:(time+1),]-pop[1:time,]
   growth = growth %>%
+    rename(High_No_Signal = H_N,
+           High_Signal = H_S,
+           Low_No_Signal = L_N,
+           Low_Signal = L_S) %>%
     mutate(t = 1:time,
            Signal = High_Signal + Low_Signal,
            No_Signal = High_No_Signal + Low_No_Signal) %>%
