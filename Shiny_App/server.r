@@ -549,6 +549,250 @@ function(input, output, session) {
     list(pop, expected_payoffs, growth)
   }
   
+  evo_join_high = function(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow, join_scenario){
+    H_N = ratio
+    H_S = ratio
+    L_N = 1-ratio
+    L_S = 1-ratio
+    pop = data.frame(H_N,H_S,L_N,L_S)
+    SHH = max(vHH - K, 0)
+    SHL = max(vHL - K, 0)
+    SLH = max(vLH - K, 0)
+    SLL = max(vLL - K, 0)
+    payoffs = data.frame(vHH,vHL,vLH,vLL,SHH,SHL,SLH,SLL)
+    expected_payoffs = data.frame()
+    group_payoffs = data.frame()
+    for(i in 1:ceiling(time/2)){
+      H_N = as.numeric(tail(pop,1)[1])
+      H_S = as.numeric(tail(pop,1)[2])
+      L_N = as.numeric(tail(pop,1)[3])
+      L_S = as.numeric(tail(pop,1)[4])
+      S_H = if(H_S+L_S>0){
+        H_S/(H_S+L_S)} else {0}
+      S_L = 1-S_H
+      N_H = if(H_N+L_N>0){
+        H_N/(H_N+L_N)} else {0}
+      N_L = 1-N_H
+      H_N_P = H_N*(N_H*as.numeric(payoffs[1])+N_L*as.numeric(payoffs[2]))
+      H_S_P = SHH*H_S
+      L_N_P = L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4]))
+      L_S_P = vLL*L_S
+      if (pop_grow == "Fixed population"){
+        Total_N_P = H_N_P+L_N_P
+        Total_S_P = H_S_P+L_S_P
+        expected_payoffs1 = data.frame(High_No_Signal = H_N_P/(H_N*Total_N_P), High_Signal = H_S_P/(H_S*Total_S_P), Low_No_Signal = L_N_P/(L_N*Total_N_P), Low_Signal = L_S_P/(L_S*Total_S_P))
+        H_N = H_N_P/Total_N_P
+        H_S = H_S_P/Total_S_P
+        L_N = L_N_P/Total_N_P
+        L_S = L_S_P/Total_S_P
+      }
+      if (pop_grow == "Unbounded exponential growth") {
+        expected_payoffs1 = data.frame(High_No_Signal = H_N_P/H_N, High_Signal = H_S_P/H_S, Low_No_Signal = L_N_P/L_N, Low_Signal = L_S_P/L_S)
+        H_N = H_N_P
+        H_S = H_S_P
+        L_N = L_N_P
+        L_S = L_S_P
+      }
+      pop1 = data.frame(H_N,H_S,L_N,L_S)
+      pop = rbind(pop, pop1)
+      group_payoffs1 = data.frame(No_Signal = expected_payoffs1[[1]]*N_H + expected_payoffs1[[3]]*N_L, Signal = expected_payoffs1[[2]]*S_H + expected_payoffs1[[4]]*S_L)
+      group_payoffs = rbind(group_payoffs, group_payoffs1)
+      expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
+    }
+    if (join_scenario == "Merge"){
+      if (pop_grow == "Fixed population"){
+        pop1 = pop1/2
+        pop = rbind(pop,pop1)
+        group_payoffs1 = group_payoffs1/2
+        group_payoffs = rbind(group_payoffs, group_payoffs1)
+        expected_payoffs1 = expected_payoffs1/2
+        expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
+        for(i in (ceiling(time/2)+1):time){
+          H_N = as.numeric(tail(pop,1)[1])
+          H_S = as.numeric(tail(pop,1)[2])
+          L_N = as.numeric(tail(pop,1)[3])
+          L_S = as.numeric(tail(pop,1)[4])
+          S_H = if(H_S+L_S>0){
+            H_S/(H_S+L_S)} else {0}
+          S_L = 1-S_H
+          N_H = if(H_N+L_N>0){
+            H_N/(H_N+L_N)} else {0}
+          N_L = 1-N_H
+          H_N_P = H_N*(N_H*as.numeric(payoffs[1])+N_L*as.numeric(payoffs[2]))
+          H_S_P = H_S*SHH
+          L_N_P = L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4]))
+          L_S_P = L_S*vLL
+          Total_P = H_N_P+L_N_P+H_S_P+L_S_P
+          expected_payoffs1 = data.frame(High_No_Signal = H_N_P/(H_N*Total_P), High_Signal = H_S_P/(H_S*Total_P), Low_No_Signal = L_N_P/(L_N*Total_P), Low_Signal = L_S_P/(L_S*Total_P))
+          H_N = H_N_P/Total_P
+          H_S = H_S_P/Total_P
+          L_N = L_N_P/Total_P
+          L_S = L_S_P/Total_P
+          pop1 = data.frame(H_N,H_S,L_N,L_S)
+          pop = rbind(pop, pop1)
+          group_payoffs1 = data.frame(No_Signal = expected_payoffs1[[1]]*N_H + expected_payoffs1[[3]]*N_L, Signal = expected_payoffs1[[2]]*S_H + expected_payoffs1[[4]]*S_L)
+          group_payoffs = rbind(group_payoffs, group_payoffs1)
+          expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
+        }
+      }
+      if (pop_grow == "Unbounded exponential growth"){
+        pop = rbind(pop,pop1)
+        group_payoffs = rbind(group_payoffs, group_payoffs1)
+        expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
+        for(i in (ceiling(time/2)+1):time){
+          H_N = as.numeric(tail(pop,1)[1])
+          H_S = as.numeric(tail(pop,1)[2])
+          L_N = as.numeric(tail(pop,1)[3])
+          L_S = as.numeric(tail(pop,1)[4])
+          S_H = if(H_S+L_S>0){
+            H_S/(H_S+L_S)} else {0}
+          S_L = 1-S_H
+          N_H = if(H_N+L_N>0){
+            H_N/(H_N+L_N)} else {0}
+          N_L = 1-N_H
+          H_N_P = H_N*(N_H*as.numeric(payoffs[1])+N_L*as.numeric(payoffs[2]))
+          H_S_P = H_S*SHH
+          L_N_P = L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4]))
+          L_S_P = L_S*vLL
+          expected_payoffs1 = data.frame(High_No_Signal = H_N_P/H_N, High_Signal = H_S_P/H_S, Low_No_Signal = L_N_P/L_N, Low_Signal = L_S_P/L_S)
+          H_N = H_N_P
+          H_S = H_S_P
+          L_N = L_N_P
+          L_S = L_S_P
+          pop1 = data.frame(H_N,H_S,L_N,L_S)
+          pop = rbind(pop, pop1)
+          group_payoffs1 = data.frame(No_Signal = expected_payoffs1[[1]]*N_H + expected_payoffs1[[3]]*N_L, Signal = expected_payoffs1[[2]]*S_H + expected_payoffs1[[4]]*S_L)
+          group_payoffs = rbind(group_payoffs, group_payoffs1)
+          expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
+        }
+      }
+    }
+    if (join_scenario == "Fight"){
+      if (pop_grow == "Fixed population"){
+        pop1 = pop1/2
+        pop = rbind(pop,pop1)
+        group_payoffs1 = group_payoffs1/2
+        group_payoffs = rbind(group_payoffs, group_payoffs1)
+        expected_payoffs1 = expected_payoffs1/2
+        expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
+        for(i in (ceiling(time/2)+1):time){
+          H_N = as.numeric(tail(pop,1)[1])
+          H_S = as.numeric(tail(pop,1)[2])
+          L_N = as.numeric(tail(pop,1)[3])
+          L_S = as.numeric(tail(pop,1)[4])
+          #Fight where each kills .5 of other group
+          S_D = (H_S+L_S)*.5
+          N_D = (H_N+L_N)*.5
+          S_H = if(H_S+L_S>0){
+            H_S/(H_S+L_S)} else {0}
+          S_L = 1-S_H
+          N_H = if(H_N+L_N>0){
+            H_N/(H_N+L_N)} else {0}
+          N_L = 1-N_H
+          H_N = max(H_N-S_D*N_H,0)
+          H_S = max(H_S-N_D*S_H,0)
+          L_N = max(L_N-S_D*N_L,0)
+          L_S = max(L_S-N_D*S_L,0)
+          #Reproduce
+          S_H = if(H_S+L_S>0){
+            H_S/(H_S+L_S)} else {0}
+          S_L = 1-S_H
+          N_H = if(H_N+L_N>0){
+            H_N/(H_N+L_N)} else {0}
+          N_L = 1-N_H
+          H_N_P = H_N*(N_H*as.numeric(payoffs[1])+N_L*as.numeric(payoffs[2]))
+          H_S_P = H_S*SHH
+          L_N_P = L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4]))
+          L_S_P = L_S*vLL
+          Total_P = H_N_P+L_N_P+H_S_P+L_S_P
+          expected_payoffs1 = data.frame(High_No_Signal = H_N_P/(H_N*Total_P), High_Signal = H_S_P/(H_S*Total_P), Low_No_Signal = L_N_P/(L_N*Total_P), Low_Signal = L_S_P/(L_S*Total_P))
+          H_N = H_N_P/Total_P
+          H_S = H_S_P/Total_P
+          L_N = L_N_P/Total_P
+          L_S = L_S_P/Total_P
+          pop1 = data.frame(H_N,H_S,L_N,L_S)
+          pop = rbind(pop, pop1)
+          group_payoffs1 = data.frame(No_Signal = expected_payoffs1[[1]]*N_H + expected_payoffs1[[3]]*N_L, Signal = expected_payoffs1[[2]]*S_H + expected_payoffs1[[4]]*S_L)
+          group_payoffs = rbind(group_payoffs, group_payoffs1)
+          expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
+        }
+      }
+      if (pop_grow == "Unbounded exponential growth"){
+        pop = rbind(pop,pop1)
+        group_payoffs = rbind(group_payoffs, group_payoffs1)
+        expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
+        for(i in (ceiling(time/2)+1):time){
+          H_N = as.numeric(tail(pop,1)[1])
+          H_S = as.numeric(tail(pop,1)[2])
+          L_N = as.numeric(tail(pop,1)[3])
+          L_S = as.numeric(tail(pop,1)[4])
+          #Fight where each kills .5 of other group
+          S_D = (H_S+L_S)*.5
+          N_D = (H_N+L_N)*.5
+          S_H = if(H_S+L_S>0){
+            H_S/(H_S+L_S)} else {0}
+          S_L = 1-S_H
+          N_H = if(H_N+L_N>0){
+            H_N/(H_N+L_N)} else {0}
+          N_L = 1-N_H
+          H_N = max(H_N-S_D*N_H,0)
+          H_S = max(H_S-N_D*S_H,0)
+          L_N = max(L_N-S_D*N_L,0)
+          L_S = max(L_S-N_D*S_L,0)
+          #Reproduce
+          S_H = if(H_S+L_S>0){
+            H_S/(H_S+L_S)} else {0}
+          S_L = 1-S_H
+          N_H = if(H_N+L_N>0){
+            H_N/(H_N+L_N)} else {0}
+          N_L = 1-N_H
+          H_N_P = H_N*(N_H*as.numeric(payoffs[1])+N_L*as.numeric(payoffs[2]))
+          H_S_P = H_S*SHH
+          L_N_P = L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4]))
+          L_S_P = L_S*vLL
+          expected_payoffs1 = data.frame(High_No_Signal = H_N_P/H_N, High_Signal = H_S_P/H_S, Low_No_Signal = L_N_P/L_N, Low_Signal = L_S_P/L_S)
+          H_N = H_N_P
+          H_S = H_S_P
+          L_N = L_N_P
+          L_S = L_S_P
+          pop1 = data.frame(H_N,H_S,L_N,L_S)
+          pop = rbind(pop, pop1)
+          group_payoffs1 = data.frame(No_Signal = expected_payoffs1[[1]]*N_H + expected_payoffs1[[3]]*N_L, Signal = expected_payoffs1[[2]]*S_H + expected_payoffs1[[4]]*S_L)
+          group_payoffs = rbind(group_payoffs, group_payoffs1)
+          expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
+        }
+      }
+    }
+    growth = pop[2:(time+2),]-pop[1:(time+1),]
+    growth[ceiling(time/2)+1,]=NA
+    growth = growth %>%
+      rename(High_No_Signal = H_N,
+             High_Signal = H_S,
+             Low_No_Signal = L_N,
+             Low_Signal = L_S) %>%
+      mutate(t = 1:(time+1),
+             Signal = High_Signal + Low_Signal,
+             No_Signal = High_No_Signal + Low_No_Signal) %>%
+      gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Growth")
+    
+    pop = pop %>%
+      rename(High_No_Signal = H_N,
+             High_Signal = H_S,
+             Low_No_Signal = L_N,
+             Low_Signal = L_S) %>%
+      mutate(t = 0:(time+1),
+             Signal = High_Signal + Low_Signal,
+             No_Signal = High_No_Signal + Low_No_Signal) %>%
+      gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Population")
+    
+    expected_payoffs = cbind(expected_payoffs,group_payoffs)
+    expected_payoffs[ceiling(time/2)+1,]=NA
+    expected_payoffs = expected_payoffs %>%
+      mutate(t = 1:(time+1)) %>%
+      gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Growth_Rate")
+    list(pop, expected_payoffs, growth)
+  }
+  
   pop_evo_elect = reactive({
     evo_elect(input$ratio, input$vHH, input$vHL, input$vLH, input$vLL, input$K, input$time)
   })
@@ -607,21 +851,21 @@ function(input, output, session) {
     evo_join(input$ratio, input$vHH, input$vHL, input$vLH, input$vLL, input$K, input$time, input$pop_grow, input$join_scenario)
   })
   
-  output$JoinPop = renderPlot({
+  output$Join_P = renderPlot({
     ggplot(data = pop_evo_join()[[1]], aes(x = t, y = Population, color = Type)) +
       geom_line()+
       geom_vline(xintercept = ceiling(input$time/2))+
       geom_vline(xintercept = ceiling(input$time/2)+1)
   })
   
-  output$JoinPay = renderPlot({
+  output$Join_R = renderPlot({
     ggplot(data = pop_evo_join()[[2]], aes(x = t, y = Growth_Rate, color = Type))+
       geom_line()+
       geom_vline(xintercept = ceiling(input$time/2))+
       geom_vline(xintercept = ceiling(input$time/2)+2)
   })
   
-  output$JoinGroup = renderPlot({
+  output$Join_G = renderPlot({
     ggplot(data = pop_evo_join()[[3]], aes(x = t, y = Growth, color = Type))+
       geom_line()+
       geom_vline(xintercept = ceiling(input$time/2))+
@@ -646,5 +890,29 @@ function(input, output, session) {
     ggplot(data = pop_evo_A_H()[[3]], aes(x = t, y = Growth, color = Type))+
       geom_line()
   })
-}
   
+  pop_evo_join_high = reactive({
+    evo_join_high(input$ratio, input$vHH, input$vHL, input$vLH, input$vLL, input$K, input$time, input$pop_grow, input$join_scenario)
+  })
+  
+  output$JoinH_P = renderPlot({
+    ggplot(data = pop_evo_join_high()[[1]], aes(x = t, y = Population, color = Type)) +
+      geom_line()+
+      geom_vline(xintercept = ceiling(input$time/2))+
+      geom_vline(xintercept = ceiling(input$time/2)+1)
+  })
+  
+  output$JoinH_R = renderPlot({
+    ggplot(data = pop_evo_join_high()[[2]], aes(x = t, y = Growth_Rate, color = Type))+
+      geom_line()+
+      geom_vline(xintercept = ceiling(input$time/2))+
+      geom_vline(xintercept = ceiling(input$time/2)+2)
+  })
+  
+  output$JoinH_G = renderPlot({
+    ggplot(data = pop_evo_join_high()[[3]], aes(x = t, y = Growth, color = Type))+
+      geom_line()+
+      geom_vline(xintercept = ceiling(input$time/2))+
+      geom_vline(xintercept = ceiling(input$time/2)+2)
+  })
+}

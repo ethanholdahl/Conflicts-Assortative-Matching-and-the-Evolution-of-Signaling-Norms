@@ -228,9 +228,9 @@ navbarPage(title = "Costly Singals",
                                        ending with the non-signaling population surpassing the signaling population as the evolution of that group catches up.")
                        ),
                        tabPanel("Two separate populations: One where everyone signals, the other where no one signals. They join to form one population at period T/2.",
-                                plotOutput("JoinPop"),
-                                plotOutput("JoinPay"),
-                                plotOutput("JoinGroup"),
+                                plotOutput("Join_P"),
+                                plotOutput("Join_R"),
+                                plotOutput("Join_G"),
                                 helpText("Here I reduce each group to half it's size when the groups join at period T/2 to maintain the a fixed population size.")
                        ),
                        tabPanel("Two spereate populations: One where only high types signal, the other where no one signals",
@@ -240,9 +240,9 @@ navbarPage(title = "Costly Singals",
                                 helpText("Add Text Here")
                        ),
                        tabPanel("Two spereate populations: One where only high types signal, the other where no one signals. They join to form one population at period T/2.",
-                                plotOutput("JoinPopH"),
-                                plotOutput("JoinPayH"),
-                                plotOutput("JoinGroupH"),
+                                plotOutput("JoinH_P"),
+                                plotOutput("JoinH_R"),
+                                plotOutput("JoinH_G"),
                                 helpText("Add Text Here")
                        )
                      )
