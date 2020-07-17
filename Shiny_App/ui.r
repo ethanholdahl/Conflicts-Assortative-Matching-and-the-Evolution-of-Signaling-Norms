@@ -116,7 +116,7 @@ navbarPage(title = "Costly Singals",
                        min = 0,
                        max = 3,
                        step = .01,
-                       value = 1.2
+                       value = 1.15
                      ),
                      sliderInput(
                        "vHL",
@@ -124,7 +124,7 @@ navbarPage(title = "Costly Singals",
                        min = 0,
                        max = 3,
                        step = .01,
-                       value = 1.1
+                       value = .9
                      ),
                      sliderInput(
                        "vLL",
@@ -132,7 +132,7 @@ navbarPage(title = "Costly Singals",
                        min = 0,
                        max = 3,
                        step = .01,
-                       value = .9
+                       value = .8
                      ),
                      sliderInput(
                        "vLH",
@@ -140,7 +140,7 @@ navbarPage(title = "Costly Singals",
                        min = 0,
                        max = 3,
                        step = .01,
-                       value = .95
+                       value = .85
                      ),
                      sliderInput(
                        "ratio",
@@ -156,15 +156,15 @@ navbarPage(title = "Costly Singals",
                        min = 0,
                        max = 2,
                        step = .01,
-                       value = .07
+                       value = .1
                      ),
                      sliderInput(
                        "time",
                        label = "Time horizon \\(T\\):",
                        min = 1,
-                       max = 100,
+                       max = 200,
                        step = 1,
-                       value = 20
+                       value = 30
                      ),
                      sliderInput(
                        "ratio_h",
@@ -185,13 +185,29 @@ navbarPage(title = "Costly Singals",
                      radioButtons("pop_grow",
                                   label = "Select how the size of the population evolves",
                                   choices = c("Fixed population", "Unbounded exponential growth", "Logistic growth to capacity"),
-                                  selected = "Fixed population"
-                                  ),
+                                  selected = "Unbounded exponential growth"
+                     ),
                      radioButtons("join_scenario",
                                   label = "When populations join together do they fight or merge?",
                                   choices = c("Fight", "Merge"),
                                   selected = "Fight"
-                                  )
+                     ),
+                     sliderInput(
+                       "beta",
+                       label = "Beta: The number each member kills each period when fighting",
+                       min = 0,
+                       max = 1,
+                       step = .01,
+                       value = .2
+                     ),
+                     sliderInput(
+                       "start",
+                       label = "When do the two groups start fighting",
+                       min = 1,
+                       max = 200,
+                       step = 1,
+                       value = 20
+                     )
                    ),
                    mainPanel(
                      h4("Population Dynamics"),
@@ -212,7 +228,7 @@ navbarPage(title = "Costly Singals",
                                      (or lack thereof) are retained between 
                                      each period with the initial type and signal levels
                                      determined by the inputs on the left.")
-                                ),
+                       ),
                        tabPanel("Two separate populations: One where everyone signals, the other where no one signals",
                                 plotOutput("Sep_P"),
                                 plotOutput("Sep_R"),
