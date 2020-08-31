@@ -845,13 +845,16 @@ ggplot(data = test[[3]], aes(x = t, y = Growth, color = Type)) +
 
 regions = function(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow, beta, start){
   #create a few graphs showing which group will survive the competition under different paramaters
-  #first: K and start
   Klow = round(max(vLH-vLL,0),2)
   Khigh = round(vHH-vHL,2)
   Krange = seq(from = Klow, to = Khigh, by = .01)
   startrange = seq(from = 1, to = time, by = 1)
-  SKregion=tibble(start = rep(startrange,length(Krange)), K = rep(Krange,each = length(startrange)), result = "")
+  betarange = seq(from = .01, to = 1, by = .01)
+  SKregion = tibble(start = rep(startrange, length(Krange)), K = rep(Krange, each = length(startrange)), result = "")
+  BKregion = tibble(beta = rep(betarange, length(Krange)), K = rep(Krange, each = length(betarange)), result = "")
+  SBregion = tibble(start = rep(startrange, length(betarange)), beta = rep(betarange, each = length(startrange)), result = "")
   for(Kvar in Krange){
+    #KSregion and BKregion first
     j = match(Kvar,Krange)
     H_N = ratio
     H_S = ratio
@@ -898,6 +901,7 @@ regions = function(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow, beta, start){
       }
     }
     for(startvar in startrange){
+      #SKregion
       i = match(startvar,startrange)
       popstart = pop[startvar,]
       stop = 0
@@ -954,7 +958,6 @@ regions = function(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow, beta, start){
           popstart = rbind(popstart, popstart1)
         }
         if (pop_grow == "Unbounded exponential growth"){
-          
           H_N = as.numeric(tail(popstart,1)[1])
           H_S = as.numeric(tail(popstart,1)[2])
           L_N = as.numeric(tail(popstart,1)[3])
@@ -1006,12 +1009,292 @@ regions = function(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow, beta, start){
         }
       }
     }
+    for(betavar in betarange){
+      #BKregion
+      i = match(betavar, betarange)
+      popstart = pop[start,]
+      stop = 0
+      while(stop == 0){
+        if (pop_grow == "Fixed population"){
+          H_N = as.numeric(tail(popstart,1)[1])
+          H_S = as.numeric(tail(popstart,1)[2])
+          L_N = as.numeric(tail(popstart,1)[3])
+          L_S = as.numeric(tail(popstart,1)[4])
+          #Fight where each kills beta of other group
+          S_D = (H_S+L_S)*betavar
+          N_D = (H_N+L_N)*betavar
+          if((H_S+L_S)<=N_D){
+            if((H_N+L_N)<=S_D & S_D>N_D){
+              #tiebreak goes to N
+              BKregion$result[(j-1)*length(betarange)+i] = "S"
+              stop = 1
+            } else {
+              BKregion$result[(j-1)*length(betarange)+i] = "N"
+              stop = 1
+            }
+          }
+          if((H_N+L_N)<=S_D){
+            BKregion$result[(j-1)*length(betarange)+i] = "S"
+            stop = 1
+          }
+          S_H = if(H_S+L_S>0){
+            H_S/(H_S+L_S)} else {0}
+          S_L = 1-S_H
+          N_H = if(H_N+L_N>0){
+            H_N/(H_N+L_N)} else {0}
+          N_L = 1-N_H
+          H_N = max(H_N-S_D*N_H,0)
+          H_S = max(H_S-N_D*S_H,0)
+          L_N = max(L_N-S_D*N_L,0)
+          L_S = max(L_S-N_D*S_L,0)
+          #Reproduce
+          S_H = if(H_S+L_S>0){
+            H_S/(H_S+L_S)} else {0}
+          S_L = 1-S_H
+          N_H = if(H_N+L_N>0){
+            H_N/(H_N+L_N)} else {0}
+          N_L = 1-N_H
+          H_N_P = H_N*(N_H*as.numeric(payoffs[1])+N_L*as.numeric(payoffs[2]))
+          H_S_P = H_S*SHH
+          L_N_P = L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4]))
+          L_S_P = L_S*vLL
+          Total_P = H_N_P+L_N_P+H_S_P+L_S_P
+          H_N = H_N_P/Total_P
+          H_S = H_S_P/Total_P
+          L_N = L_N_P/Total_P
+          L_S = L_S_P/Total_P
+          popstart1 = data.frame(H_N,H_S,L_N,L_S)
+          popstart = rbind(popstart, popstart1)
+        }
+        if (pop_grow == "Unbounded exponential growth"){
+          H_N = as.numeric(tail(popstart,1)[1])
+          H_S = as.numeric(tail(popstart,1)[2])
+          L_N = as.numeric(tail(popstart,1)[3])
+          L_S = as.numeric(tail(popstart,1)[4])
+          #Fight where each kills beta of other group
+          S_D = (H_S+L_S)*betavar
+          N_D = (H_N+L_N)*betavar
+          if((H_S+L_S)<=N_D){
+            if((H_N+L_N)<=S_D & S_D>N_D){
+              #tiebreak goes to N
+              BKregion$result[(j-1)*length(betarange)+i] = "S"
+              stop = 1
+            } else {
+              BKregion$result[(j-1)*length(betarange)+i] = "N"
+              stop = 1
+            }
+          }
+          if((H_N+L_N)<=S_D){
+            BKregion$result[(j-1)*length(betarange)+i] = "S"
+            stop = 1
+          }
+          S_H = if(H_S+L_S>0){
+            H_S/(H_S+L_S)} else {0}
+          S_L = 1-S_H
+          N_H = if(H_N+L_N>0){
+            H_N/(H_N+L_N)} else {0}
+          N_L = 1-N_H
+          H_N = max(H_N-S_D*N_H,0)
+          H_S = max(H_S-N_D*S_H,0)
+          L_N = max(L_N-S_D*N_L,0)
+          L_S = max(L_S-N_D*S_L,0)
+          #Reproduce
+          S_H = if(H_S+L_S>0){
+            H_S/(H_S+L_S)} else {0}
+          S_L = 1-S_H
+          N_H = if(H_N+L_N>0){
+            H_N/(H_N+L_N)} else {0}
+          N_L = 1-N_H
+          H_N_P = H_N*(N_H*as.numeric(payoffs[1])+N_L*as.numeric(payoffs[2]))
+          H_S_P = H_S*SHH
+          L_N_P = L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4]))
+          L_S_P = L_S*vLL
+          H_N = H_N_P
+          H_S = H_S_P
+          L_N = L_N_P
+          L_S = L_S_P
+          popstart1 = data.frame(H_N,H_S,L_N,L_S)
+          popstart = rbind(popstart, popstart1)
+        }
+      }
+    }
   }
-  list(SKregion)
+  ##SBregion
+  H_N = ratio
+  H_S = ratio
+  L_N = 1-ratio
+  L_S = 1-ratio
+  pop = data.frame(H_N,H_S,L_N,L_S)
+  SHH = max(vHH - K, 0)
+  SHL = max(vHL - K, 0)
+  SLH = max(vLH - K, 0)
+  SLL = max(vLL - K, 0)
+  payoffs = data.frame(vHH,vHL,vLH,vLL,SHH,SHL,SLH,SLL)
+  if (time != 1){
+    for(i in 1:(time-1)){
+      H_N = as.numeric(tail(pop,1)[1])
+      H_S = as.numeric(tail(pop,1)[2])
+      L_N = as.numeric(tail(pop,1)[3])
+      L_S = as.numeric(tail(pop,1)[4])
+      S_H = if(H_S+L_S>0){
+        H_S/(H_S+L_S)} else {0}
+      S_L = 1-S_H
+      N_H = if(H_N+L_N>0){
+        H_N/(H_N+L_N)} else {0}
+      N_L = 1-N_H
+      H_N_P = H_N*(N_H*as.numeric(payoffs[1])+N_L*as.numeric(payoffs[2]))
+      H_S_P = SHH*H_S
+      L_N_P = L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4]))
+      L_S_P = vLL*L_S
+      if (pop_grow == "Fixed population"){
+        Total_N_P = H_N_P+L_N_P
+        Total_S_P = H_S_P+L_S_P
+        H_N = H_N_P/Total_N_P
+        H_S = H_S_P/Total_S_P
+        L_N = L_N_P/Total_N_P
+        L_S = L_S_P/Total_S_P
+      }
+      if (pop_grow == "Unbounded exponential growth") {
+        H_N = H_N_P
+        H_S = H_S_P
+        L_N = L_N_P
+        L_S = L_S_P
+      }
+      pop1 = data.frame(H_N,H_S,L_N,L_S)
+      pop = rbind(pop, pop1)
+    }
+  }
+  for(startvar in startrange){
+    i = match(startvar, startrange)
+    for(betavar in betarange){
+      j = match(betavar, betarange)
+      popstart = pop[startvar,]
+      stop = 0
+      while(stop == 0){
+        if (pop_grow == "Fixed population"){
+          H_N = as.numeric(tail(popstart,1)[1])
+          H_S = as.numeric(tail(popstart,1)[2])
+          L_N = as.numeric(tail(popstart,1)[3])
+          L_S = as.numeric(tail(popstart,1)[4])
+          #Fight where each kills beta of other group
+          S_D = (H_S+L_S)*betavar
+          N_D = (H_N+L_N)*betavar
+          if((H_S+L_S)<=N_D){
+            if((H_N+L_N)<=S_D & S_D>N_D){
+              #tiebreak goes to N
+              SBregion$result[(j-1)*length(startrange)+i] = "S"
+              stop = 1
+            } else {
+              SBregion$result[(j-1)*length(startrange)+i] = "N"
+              stop = 1
+            }
+          }
+          if((H_N+L_N)<=S_D){
+            SBregion$result[(j-1)*length(startrange)+i] = "S"
+            stop = 1
+          }
+          S_H = if(H_S+L_S>0){
+            H_S/(H_S+L_S)} else {0}
+          S_L = 1-S_H
+          N_H = if(H_N+L_N>0){
+            H_N/(H_N+L_N)} else {0}
+          N_L = 1-N_H
+          H_N = max(H_N-S_D*N_H,0)
+          H_S = max(H_S-N_D*S_H,0)
+          L_N = max(L_N-S_D*N_L,0)
+          L_S = max(L_S-N_D*S_L,0)
+          #Reproduce
+          S_H = if(H_S+L_S>0){
+            H_S/(H_S+L_S)} else {0}
+          S_L = 1-S_H
+          N_H = if(H_N+L_N>0){
+            H_N/(H_N+L_N)} else {0}
+          N_L = 1-N_H
+          H_N_P = H_N*(N_H*as.numeric(payoffs[1])+N_L*as.numeric(payoffs[2]))
+          H_S_P = H_S*SHH
+          L_N_P = L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4]))
+          L_S_P = L_S*vLL
+          Total_P = H_N_P+L_N_P+H_S_P+L_S_P
+          H_N = H_N_P/Total_P
+          H_S = H_S_P/Total_P
+          L_N = L_N_P/Total_P
+          L_S = L_S_P/Total_P
+          popstart1 = data.frame(H_N,H_S,L_N,L_S)
+          popstart = rbind(popstart, popstart1)
+        }
+        if (pop_grow == "Unbounded exponential growth"){
+          H_N = as.numeric(tail(popstart,1)[1])
+          H_S = as.numeric(tail(popstart,1)[2])
+          L_N = as.numeric(tail(popstart,1)[3])
+          L_S = as.numeric(tail(popstart,1)[4])
+          #Fight where each kills beta of other group
+          S_D = (H_S+L_S)*betavar
+          N_D = (H_N+L_N)*betavar
+          if((H_S+L_S)<=N_D){
+            if((H_N+L_N)<=S_D & S_D>N_D){
+              #tiebreak goes to N
+              SBregion$result[(j-1)*length(startrange)+i] = "S"
+              stop = 1
+            } else {
+              SBregion$result[(j-1)*length(startrange)+i] = "N"
+              stop = 1
+            }
+          }
+          if((H_N+L_N)<=S_D){
+            SBregion$result[(j-1)*length(startrange)+i] = "S"
+            stop = 1
+          }
+          S_H = if(H_S+L_S>0){
+            H_S/(H_S+L_S)} else {0}
+          S_L = 1-S_H
+          N_H = if(H_N+L_N>0){
+            H_N/(H_N+L_N)} else {0}
+          N_L = 1-N_H
+          H_N = max(H_N-S_D*N_H,0)
+          H_S = max(H_S-N_D*S_H,0)
+          L_N = max(L_N-S_D*N_L,0)
+          L_S = max(L_S-N_D*S_L,0)
+          #Reproduce
+          S_H = if(H_S+L_S>0){
+            H_S/(H_S+L_S)} else {0}
+          S_L = 1-S_H
+          N_H = if(H_N+L_N>0){
+            H_N/(H_N+L_N)} else {0}
+          N_L = 1-N_H
+          H_N_P = H_N*(N_H*as.numeric(payoffs[1])+N_L*as.numeric(payoffs[2]))
+          H_S_P = H_S*SHH
+          L_N_P = L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4]))
+          L_S_P = L_S*vLL
+          H_N = H_N_P
+          H_S = H_S_P
+          L_N = L_N_P
+          L_S = L_S_P
+          popstart1 = data.frame(H_N,H_S,L_N,L_S)
+          popstart = rbind(popstart, popstart1)
+        }
+      }
+    }
+  }
+  list(SKregion, BKregion, SBregion)
 }
 
 test = regions(ratio,vHH,vHL,vLH,vLL,K,time,pop_grow,beta,start)
 
 ggplot(data = test[[1]], aes(x = start, y = K, fill = result)) +
-  geom_tile(color = "black")+
-  scale_fill_manual(values = c("N"=4, "S"=6))
+  geom_tile(color = "black") +
+  scale_fill_manual(values = c("N"=4, "S"=6)) +
+  geom_vline(xintercept = start, color = "white") +
+  geom_hline(yintercept = K, color = "white")
+
+ggplot(data = test[[2]], aes(x = beta, y = K, fill = result)) +
+  geom_tile(color = "black") +
+  scale_fill_manual(values = c("N"=4, "S"=6)) +
+  geom_vline(xintercept = beta, color = "white") +
+  geom_hline(yintercept = K, color = "white")
+
+ggplot(data = test[[3]], aes(x = start, y = beta, fill = result)) +
+  geom_tile(color = "black") +
+  scale_fill_manual(values = c("N"=4, "S"=6)) +
+  geom_vline(xintercept = start, color = "white") +
+  geom_hline(yintercept = beta, color = "white") 
+  
