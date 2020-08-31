@@ -259,6 +259,7 @@ navbarPage(title = "Costly Singals",
                                 plotOutput("JoinH_P"),
                                 plotOutput("JoinH_R"),
                                 plotOutput("JoinH_G"),
+                                plotOutput("SKregion"),
                                 helpText("Add Text Here")
                        )
                      )
