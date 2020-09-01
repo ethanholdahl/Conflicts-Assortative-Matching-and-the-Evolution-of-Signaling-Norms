@@ -113,7 +113,7 @@ navbarPage(title = "Costly Singals",
                      sliderInput(
                        "vHH",
                        label = "V(H,H):",
-                       min = 0,
+                       min = 1,
                        max = 3,
                        step = .01,
                        value = 1.15

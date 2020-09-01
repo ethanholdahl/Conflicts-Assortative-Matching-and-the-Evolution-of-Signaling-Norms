@@ -30,7 +30,7 @@ function(input, output, session) {
     vLH = input$vLH
     vLL = input$vLL
     K = input$K
-    updateSliderInput(session, "K", min = round(max(0, vLH-vLL),2), max = round(vHH-vHL,2))
+    updateSliderInput(session, "K", min = round(max(0, vLH-vLL),2), max = min(round(vHH-vHL,2),round(vHH-1,2)))
   })
   
   observeEvent(input$time, {
