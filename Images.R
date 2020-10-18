@@ -826,3 +826,43 @@ regions = function(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow, beta, start){
   list(SKregion, BKregion, SBregion)
 }
 
+test=evo_join_high(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow, join_scenario, beta, start)
+
+test[[1]]$Type <- factor(test[[1]]$Type, levels = c("Signal", "High_Signal", "Low_Signal", "No_Signal", "High_No_Signal", "Low_No_Signal"))
+
+ggplot(data = test[[1]], aes(x = t, y = Population, color = Type, linetype = Type)) +
+  geom_line(size = 1.5) +
+  theme(text = element_text(size = 20)) +
+  scale_linetype_manual(values = c("Signal" = "solid", "High_Signal" = "dashed", "Low_Signal" = "dotted", "No_Signal" = "solid", "High_No_Signal" = "dashed", "Low_No_Signal" = "dotted"))+
+  scale_color_manual(values = c("Signal" = rgb(0,.5,1), "High_Signal" = rgb(0,.75,1), "Low_Signal" = rgb(0,0,1), "No_Signal" = rgb(1,.5,0), "High_No_Signal" = rgb(1,.8,0), "Low_No_Signal" = rgb(1,0,0)))+
+  geom_vline(xintercept = ceiling(start-1))+
+  ggtitle("Competition between populations after a period of peace")
+
+ggplot(data = test[[2]], aes(x = t, y = Growth_Rate, color = Type)) +
+  geom_line()+
+  geom_vline(xintercept = ceiling(start))
+
+ggplot(data = test[[3]], aes(x = t, y = Growth, color = Type)) +
+  geom_line()+
+  geom_vline(xintercept = ceiling(start))
+
+test = regions(ratio,vHH,vHL,vLH,vLL,K,time,pop_grow,beta,start)
+
+ggplot(data = test[[1]], aes(x = start, y = K, fill = result)) +
+  geom_tile(color = "black") +
+  scale_fill_manual(values = c("N"=4, "S"=6)) +
+  geom_vline(xintercept = start, color = "white") +
+  geom_hline(yintercept = K, color = "white")
+
+ggplot(data = test[[2]], aes(x = beta, y = K, fill = result)) +
+  geom_tile(color = "black") +
+  scale_fill_manual(values = c("N"=4, "S"=6)) +
+  geom_vline(xintercept = beta, color = "white") +
+  geom_hline(yintercept = K, color = "white")
+
+ggplot(data = test[[3]], aes(x = start, y = beta, fill = result)) +
+  geom_tile(color = "black") +
+  scale_fill_manual(values = c("N"=4, "S"=6)) +
+  geom_vline(xintercept = start, color = "white") +
+  geom_hline(yintercept = beta, color = "white") 
+
