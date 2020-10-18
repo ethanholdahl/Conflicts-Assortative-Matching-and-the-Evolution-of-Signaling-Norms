@@ -1,11 +1,11 @@
 library("tidyverse", "shiny", "stringr")
 
-time = 35
-vHH =1.1
+time = 30
+vHH =1.15
 vHL = .9
 vLH = .85
 vLL = .8
-K = .05
+K = .1
 ratio = .2
 ratio_l = 0
 ratio_h = 1
@@ -13,7 +13,7 @@ pop_grow = "Unbounded exponential growth"
 #"Fixed population", "Unbounded exponential growth", "Logistic growth to capacity"
 join_scenario = "Fight"
 #"Fight", "Merge"
-start = 5
+start = 20
 beta = .2
 
 
