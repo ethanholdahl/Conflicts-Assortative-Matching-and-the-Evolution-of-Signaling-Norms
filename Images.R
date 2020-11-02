@@ -1,4 +1,5 @@
 library("tidyverse", "shiny", "stringr")
+##1100*500 image size
 
 time = 30
 vHH =1.15
@@ -16,12 +17,11 @@ join_scenario = "Fight"
 start = 20
 beta = .2
 
-
-evo = function(ratio, ratio_h, ratio_l, vHH, vHL, vLH, vLL, K, time, pop_grow){
-  H_N = (1-ratio_h)*ratio
-  H_S = ratio_h*ratio
-  L_N = (1-ratio_l)*(1-ratio)
-  L_S = ratio_l*(1-ratio)
+evo_apart_high = function(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow){
+  H_N = ratio
+  H_S = ratio
+  L_N = 1-ratio
+  L_S = 1-ratio
   pop = data.frame(H_N,H_S,L_N,L_S)
   SHH = max(vHH - K, 0)
   SHL = max(vHL - K, 0)
@@ -29,6 +29,7 @@ evo = function(ratio, ratio_h, ratio_l, vHH, vHL, vLH, vLL, K, time, pop_grow){
   SLL = max(vLL - K, 0)
   payoffs = data.frame(vHH,vHL,vLH,vLL,SHH,SHL,SLH,SLL)
   expected_payoffs = data.frame()
+  group_payoffs = data.frame()
   for(i in 1:time){
     H_N = as.numeric(tail(pop,1)[1])
     H_S = as.numeric(tail(pop,1)[2])
@@ -41,16 +42,17 @@ evo = function(ratio, ratio_h, ratio_l, vHH, vHL, vLH, vLL, K, time, pop_grow){
       H_N/(H_N+L_N)} else {0}
     N_L = 1-N_H
     H_N_P = H_N*(N_H*as.numeric(payoffs[1])+N_L*as.numeric(payoffs[2]))
-    H_S_P = H_S*(S_H*as.numeric(payoffs[5])+S_L*as.numeric(payoffs[6]))
+    H_S_P = SHH*H_S
     L_N_P = L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4]))
-    L_S_P = L_S*(S_H*as.numeric(payoffs[7])+S_L*as.numeric(payoffs[8]))
+    L_S_P = vLL*L_S
     if (pop_grow == "Fixed population"){
-      Total_P = H_N_P+H_S_P+L_N_P+L_S_P
-      expected_payoffs1 = data.frame(High_No_Signal = H_N_P/(H_N*Total_P), High_Signal = H_S_P/(H_S*Total_P), Low_No_Signal = L_N_P/(L_N*Total_P), Low_Signal = L_S_P/(L_S*Total_P))
-      H_N = H_N_P/Total_P
-      H_S = H_S_P/Total_P
-      L_N = L_N_P/Total_P
-      L_S = L_S_P/Total_P
+      Total_N_P = H_N_P+L_N_P
+      Total_S_P = H_S_P+L_S_P
+      expected_payoffs1 = data.frame(High_No_Signal = H_N_P/(H_N*Total_N_P), High_Signal = H_S_P/(H_S*Total_S_P), Low_No_Signal = L_N_P/(L_N*Total_N_P), Low_Signal = L_S_P/(L_S*Total_S_P))
+      H_N = H_N_P/Total_N_P
+      H_S = H_S_P/Total_S_P
+      L_N = L_N_P/Total_N_P
+      L_S = L_S_P/Total_S_P
     }
     if (pop_grow == "Unbounded exponential growth") {
       expected_payoffs1 = data.frame(High_No_Signal = H_N_P/H_N, High_Signal = H_S_P/H_S, Low_No_Signal = L_N_P/L_N, Low_Signal = L_S_P/L_S)
@@ -61,9 +63,10 @@ evo = function(ratio, ratio_h, ratio_l, vHH, vHL, vLH, vLL, K, time, pop_grow){
     }
     pop1 = data.frame(H_N,H_S,L_N,L_S)
     pop = rbind(pop, pop1)
+    group_payoffs1 = data.frame(No_Signal = expected_payoffs1[[1]]*N_H + expected_payoffs1[[3]]*N_L, Signal = expected_payoffs1[[2]]*S_H + expected_payoffs1[[4]]*S_L)
+    group_payoffs = rbind(group_payoffs, group_payoffs1)
     expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
   }
-  
   growth = pop[2:(time+1),]-pop[1:time,]
   growth = growth %>%
     rename(High_No_Signal = H_N,
@@ -74,94 +77,159 @@ evo = function(ratio, ratio_h, ratio_l, vHH, vHL, vLH, vLL, K, time, pop_grow){
            Signal = High_Signal + Low_Signal,
            No_Signal = High_No_Signal + Low_No_Signal) %>%
     gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Growth")
+  growth$Type = factor(growth$Type, levels = c("Signal", "High_Signal", "Low_Signal", "No_Signal", "High_No_Signal", "Low_No_Signal"))
   
   pop = pop %>%
     rename(High_No_Signal = H_N,
            High_Signal = H_S,
            Low_No_Signal = L_N,
            Low_Signal = L_S) %>%
-    mutate(t = 0:time) %>%
-    gather("High_No_Signal", "Low_No_Signal", "High_Signal", "Low_Signal", key = Type, value = "Population")
+    mutate(t = 0:time,
+           Signal = High_Signal + Low_Signal,
+           No_Signal = High_No_Signal + Low_No_Signal) %>%
+    gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Population")
+  pop$Type = factor(pop$Type, levels = c("Signal", "High_Signal", "Low_Signal", "No_Signal", "High_No_Signal", "Low_No_Signal"))
   
+  expected_payoffs = cbind(expected_payoffs,group_payoffs)
   expected_payoffs = expected_payoffs %>%
     mutate(t = 1:time) %>%
-    gather("High_No_Signal", "Low_No_Signal", "High_Signal", "Low_Signal", key = Type, value = "Growth_Rate")
+    gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Growth_Rate")
+  expected_payoffs$Type = factor(expected_payoffs$Type, levels = c("Signal", "High_Signal", "Low_Signal", "No_Signal", "High_No_Signal", "Low_No_Signal"))
   list(pop, expected_payoffs, growth)
 }
 
-#make graphs for population evolution with no signaling
+#make graphs for population evolution seperately
 
-pop_evo = evo(ratio, 0, 0, vHH, vHL, vLH, vLL, K, time, pop_grow)[[1]]
-rate_evo = evo(ratio, 0, 0, vHH, vHL, vLH, vLL, K, time, pop_grow)[[2]]
-grow_evo = evo(ratio, 0, 0, vHH, vHL, vLH, vLL, K, time, pop_grow)[[3]]
+pop_evo = evo_apart_high(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow)[[1]]
+rate_evo = evo_apart_high(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow)[[2]]
+grow_evo = evo_apart_high(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow)[[3]]
 
-pop_evo_NS = rbind(pop_evo[pop_evo$Type=="High_No_Signal",], pop_evo[pop_evo$Type=="Low_No_Signal",])
-rate_evo_NS = rbind(rate_evo[rate_evo$Type=="High_No_Signal",], rate_evo[rate_evo$Type=="Low_No_Signal",])
-grow_evo_NS = rbind(grow_evo[grow_evo$Type=="No_Signal",], grow_evo[grow_evo$Type=="High_No_Signal",], grow_evo[grow_evo$Type=="Low_No_Signal",])
 
-pop_evo_NS$Type[pop_evo_NS$Type=="High_No_Signal"] = "High Type"
-pop_evo_NS$Type[pop_evo_NS$Type=="Low_No_Signal"] = "Low Type"
-rate_evo_NS$Type[rate_evo_NS$Type=="High_No_Signal"] = "High Type"
-rate_evo_NS$Type[rate_evo_NS$Type=="Low_No_Signal"] = "Low Type"
-grow_evo_NS$Type[grow_evo_NS$Type=="High_No_Signal"] = "High Type"
-grow_evo_NS$Type[grow_evo_NS$Type=="Low_No_Signal"] = "Low Type"
-grow_evo_NS$Type[grow_evo_NS$Type=="No_Signal"] = "Population"
+###No_Signal
+pop_evo_NS = pop_evo
+pop_evo_NS$Type = factor(pop_evo_NS$Type, levels = c("No_Signal", "High_No_Signal", "Low_No_Signal"))
+pop_evo_NS = pop_evo_NS[1:93,]
 
-ggplot(data = pop_evo_NS, aes(x = t, y = Population, color = Type)) +
+rate_evo_NS = rate_evo
+rate_evo_NS$Type = factor(rate_evo_NS$Type, levels = c("No_Signal", "High_No_Signal", "Low_No_Signal"))
+rate_evo_NS = rate_evo_NS[1:90,]
+
+grow_evo_NS = grow_evo
+grow_evo_NS$Type = factor(grow_evo_NS$Type, levels = c("No_Signal", "High_No_Signal", "Low_No_Signal"))
+grow_evo_NS = grow_evo_NS[1:90,]
+
+
+###Pop_No_Signal
+ggplot(data = pop_evo_NS, aes(x = t, y = Population, color = Type, linetype = Type)) +
   geom_line(size = 1.5) +
   theme(text = element_text(size = 20)) +
-  ggtitle("Number of High Types and Low Types")
+  scale_linetype_manual(labels = c("No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                        values = c("No_Signal" = "solid", "High_No_Signal" = "dashed", "Low_No_Signal" = "dotted"))+
+  scale_color_manual(labels = c("No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                     values = c("No_Signal" = rgb(1,.5,0), "High_No_Signal" = rgb(1,.8,0), "Low_No_Signal" = rgb(1,0,0)))+
+  coord_cartesian(xlim =c(0, time))
 
-ggplot(data = rate_evo_NS, aes(x = t, y = Growth_Rate, color = Type)) +
+###Rate_No_Signal
+ggplot(data = rate_evo_NS, aes(x = t, y = Growth_Rate, color = Type, linetype = Type)) +
   geom_line(size = 1.5) +
   theme(text = element_text(size = 20)) +
-  labs(y = "Growth Rate") +
-  ggtitle("Growth Rate of High Types and Low Types")
+  scale_linetype_manual(labels = c("No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                        values = c("No_Signal" = "solid", "High_No_Signal" = "dashed", "Low_No_Signal" = "dotted"))+
+  scale_color_manual(labels = c("No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                     values = c("No_Signal" = rgb(1,.5,0), "High_No_Signal" = rgb(1,.8,0), "Low_No_Signal" = rgb(1,0,0)))+
+  labs(y = "Reproductive Rate")+
+  coord_cartesian(xlim =c(0, time))
 
-ggplot(data = grow_evo_NS, aes(x = t, y = Growth, color = Type)) +
+###Growth_No_Signal
+ggplot(data = grow_evo_NS, aes(x = t, y = Growth, color = Type, linetype = Type)) +
   geom_line(size = 1.5) +
   theme(text = element_text(size = 20)) +
-  ggtitle("Growth of High Types and Low Types")
+  scale_linetype_manual(labels = c("No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                        values = c("No_Signal" = "solid", "High_No_Signal" = "dashed", "Low_No_Signal" = "dotted"))+
+  scale_color_manual(labels = c("No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                     values = c("No_Signal" = rgb(1,.5,0), "High_No_Signal" = rgb(1,.8,0), "Low_No_Signal" = rgb(1,0,0)))+
+  ylab("Growth")+
+  coord_cartesian(xlim =c(0, time))
 
-#make graphs for population where only high type signals.
 
-pop_evo = evo(ratio, 1, 0, vHH, vHL, vLH, vLL, K, time, pop_grow)[[1]]
-rate_evo = evo(ratio, 1, 0, vHH, vHL, vLH, vLL, K, time, pop_grow)[[2]]
-grow_evo = evo(ratio, 1, 0, vHH, vHL, vLH, vLL, K, time, pop_grow)[[3]]
+###Signal
+pop_evo_S = pop_evo
+pop_evo_S$Type = factor(pop_evo_S$Type, levels = c("Signal", "High_Signal", "Low_Signal"))
+pop_evo_S = pop_evo_S[94:186,]
 
-grow_evo = grow_evo %>%
-  pivot_wider(names_from = Type, values_from = Growth) %>%
-  mutate(Signal = High_Signal+Low_No_Signal) %>%
-  pivot_longer(!t, names_to = "Type", values_to = "Growth") %>%
-  arrange(Type)
+rate_evo_S = rate_evo
+rate_evo_S$Type = factor(rate_evo_S$Type, levels = c("Signal", "High_Signal", "Low_Signal"))
+rate_evo_S = rate_evo_S[91:180,]
 
-pop_evo_S = rbind(pop_evo[pop_evo$Type=="High_Signal",], pop_evo[pop_evo$Type=="Low_No_Signal",])
-rate_evo_S = rbind(rate_evo[rate_evo$Type=="High_Signal",], rate_evo[rate_evo$Type=="Low_No_Signal",])
-grow_evo_S = rbind(grow_evo[grow_evo$Type=="Signal",], grow_evo[grow_evo$Type=="High_Signal",], grow_evo[grow_evo$Type=="Low_No_Signal",])
+grow_evo_S = grow_evo
+grow_evo_S$Type = factor(grow_evo_S$Type, levels = c("Signal", "High_Signal", "Low_Signal"))
+grow_evo_S = grow_evo_S[91:180,]
 
-pop_evo_S$Type[pop_evo_S$Type=="High_Signal"] = "High Type"
-pop_evo_S$Type[pop_evo_S$Type=="Low_No_Signal"] = "Low Type"
-rate_evo_S$Type[rate_evo_S$Type=="High_Signal"] = "High Type"
-rate_evo_S$Type[rate_evo_S$Type=="Low_No_Signal"] = "Low Type"
-grow_evo_S$Type[grow_evo_S$Type=="High_Signal"] = "High Type"
-grow_evo_S$Type[grow_evo_S$Type=="Low_No_Signal"] = "Low Type"
-grow_evo_S$Type[grow_evo_S$Type=="Signal"] = "Population"
 
-ggplot(data = pop_evo_S, aes(x = t, y = Population, color = Type)) +
+###Pop_Signal
+ggplot(data = pop_evo_S, aes(x = t, y = Population, color = Type, linetype = Type)) +
   geom_line(size = 1.5) +
   theme(text = element_text(size = 20)) +
-  ggtitle("Number of High Types and Low Types")
+  scale_linetype_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low"),
+                        values = c("Signal" = "solid", "High_Signal" = "dashed", "Low_Signal" = "dotted"))+
+  scale_color_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low"),
+                     values = c("Signal" = rgb(0,.5,1), "High_Signal" = rgb(0,.75,1), "Low_Signal" = rgb(0,0,1)))+
+  coord_cartesian(xlim =c(0, time))
 
-ggplot(data = rate_evo_S, aes(x = t, y = Growth_Rate, color = Type)) +
+###Rate_Signal
+ggplot(data = rate_evo_S, aes(x = t, y = Growth_Rate, color = Type, linetype = Type)) +
   geom_line(size = 1.5) +
   theme(text = element_text(size = 20)) +
-  labs(y = "Growth Rate") +
-  ggtitle("Growth Rate of High Types and Low Types")
+  scale_linetype_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low"),
+                        values = c("Signal" = "solid", "High_Signal" = "dashed", "Low_Signal" = "dotted"))+
+  scale_color_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low"),
+                     values = c("Signal" = rgb(0,.5,1), "High_Signal" = rgb(0,.75,1), "Low_Signal" = rgb(0,0,1)))+
+  labs(y = "Reproductive Rate")+
+  coord_cartesian(xlim =c(0, time))
 
-ggplot(data = grow_evo_S, aes(x = t, y = Growth, color = Type)) +
+###Growth_Signal
+ggplot(data = grow_evo_S, aes(x = t, y = Growth, color = Type, linetype = Type)) +
   geom_line(size = 1.5) +
   theme(text = element_text(size = 20)) +
-  ggtitle("Growth of High Types and Low Types")
+  scale_linetype_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low"),
+                        values = c("Signal" = "solid", "High_Signal" = "dashed", "Low_Signal" = "dotted"))+
+  scale_color_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low"),
+                     values = c("Signal" = rgb(0,.5,1), "High_Signal" = rgb(0,.75,1), "Low_Signal" = rgb(0,0,1)))+
+  ylab("Growth")+
+  coord_cartesian(xlim =c(0, time))
+
+###Pop_Compare
+ggplot(data = pop_evo, aes(x = t, y = Population, color = Type, linetype = Type)) +
+  geom_line(size = 1.5) +
+  theme(text = element_text(size = 20)) +
+  scale_linetype_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                        values = c("Signal" = "solid", "High_Signal" = "dashed", "Low_Signal" = "dotted", "No_Signal" = "solid", "High_No_Signal" = "dashed", "Low_No_Signal" = "dotted"))+
+  scale_color_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                     values = c("Signal" = rgb(0,.5,1), "High_Signal" = rgb(0,.75,1), "Low_Signal" = rgb(0,0,1), "No_Signal" = rgb(1,.5,0), "High_No_Signal" = rgb(1,.8,0), "Low_No_Signal" = rgb(1,0,0)))+
+  coord_cartesian(xlim =c(0, time))
+
+###Rate_Compare
+ggplot(data = rate_evo, aes(x = t, y = Growth_Rate, color = Type, linetype = Type)) +
+  geom_line(size = 1.5) +
+  theme(text = element_text(size = 20)) +
+  scale_linetype_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                        values = c("Signal" = "solid", "High_Signal" = "dashed", "Low_Signal" = "dotted", "No_Signal" = "solid", "High_No_Signal" = "dashed", "Low_No_Signal" = "dotted"))+
+  scale_color_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                     values = c("Signal" = rgb(0,.5,1), "High_Signal" = rgb(0,.75,1), "Low_Signal" = rgb(0,0,1), "No_Signal" = rgb(1,.5,0), "High_No_Signal" = rgb(1,.8,0), "Low_No_Signal" = rgb(1,0,0)))+
+  ylab("Reproductive Rate")+
+  coord_cartesian(xlim =c(0, time))
+
+###Growth_Compare
+ggplot(data = grow_evo, aes(x = t, y = Growth, color = Type, linetype = Type)) +
+  geom_line(size = 1.5) +
+  theme(text = element_text(size = 20)) +
+  scale_linetype_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                        values = c("Signal" = "solid", "High_Signal" = "dashed", "Low_Signal" = "dotted", "No_Signal" = "solid", "High_No_Signal" = "dashed", "Low_No_Signal" = "dotted"))+
+  scale_color_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                     values = c("Signal" = rgb(0,.5,1), "High_Signal" = rgb(0,.75,1), "Low_Signal" = rgb(0,0,1), "No_Signal" = rgb(1,.5,0), "High_No_Signal" = rgb(1,.8,0), "Low_No_Signal" = rgb(1,0,0)))+
+  ylab("Growth")+
+  coord_cartesian(xlim =c(0, time))
+
 
 #Make graphs for competition between populations
 
@@ -373,6 +441,7 @@ evo_join_high = function(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow, join_scen
            Signal = High_Signal + Low_Signal,
            No_Signal = High_No_Signal + Low_No_Signal) %>%
     gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Growth")
+  growth$Type = factor(growth$Type, levels = c("Signal", "High_Signal", "Low_Signal", "No_Signal", "High_No_Signal", "Low_No_Signal"))
   
   pop = pop %>%
     rename(High_No_Signal = H_N,
@@ -383,11 +452,13 @@ evo_join_high = function(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow, join_scen
            Signal = High_Signal + Low_Signal,
            No_Signal = High_No_Signal + Low_No_Signal) %>%
     gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Population")
+  pop$Type = factor(pop$Type, levels = c("Signal", "High_Signal", "Low_Signal", "No_Signal", "High_No_Signal", "Low_No_Signal"))
   
   expected_payoffs = cbind(expected_payoffs,group_payoffs)
   expected_payoffs = expected_payoffs %>%
     mutate(t = 1:time) %>%
     gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Growth_Rate")
+  expected_payoffs$Type = factor(expected_payoffs$Type, levels = c("Signal", "High_Signal", "Low_Signal", "No_Signal", "High_No_Signal", "Low_No_Signal"))
   list(pop, expected_payoffs, growth)
 }
 
@@ -826,43 +897,84 @@ regions = function(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow, beta, start){
   list(SKregion, BKregion, SBregion)
 }
 
-test=evo_join_high(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow, join_scenario, beta, start)
 
-test[[1]]$Type <- factor(test[[1]]$Type, levels = c("Signal", "High_Signal", "Low_Signal", "No_Signal", "High_No_Signal", "Low_No_Signal"))
+#Fight
 
-ggplot(data = test[[1]], aes(x = t, y = Population, color = Type, linetype = Type)) +
+###Population Graphs
+
+###Fight_NS_Win
+start = 25
+fight=evo_join_high(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow, join_scenario, beta, start)[[1]]
+ggplot(data = fight, aes(x = t, y = Population, color = Type, linetype = Type)) +
   geom_line(size = 1.5) +
   theme(text = element_text(size = 20)) +
-  scale_linetype_manual(values = c("Signal" = "solid", "High_Signal" = "dashed", "Low_Signal" = "dotted", "No_Signal" = "solid", "High_No_Signal" = "dashed", "Low_No_Signal" = "dotted"))+
-  scale_color_manual(values = c("Signal" = rgb(0,.5,1), "High_Signal" = rgb(0,.75,1), "Low_Signal" = rgb(0,0,1), "No_Signal" = rgb(1,.5,0), "High_No_Signal" = rgb(1,.8,0), "Low_No_Signal" = rgb(1,0,0)))+
+  scale_linetype_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                        values = c("Signal" = "solid", "High_Signal" = "dashed", "Low_Signal" = "dotted", "No_Signal" = "solid", "High_No_Signal" = "dashed", "Low_No_Signal" = "dotted"))+
+  scale_color_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                     values = c("Signal" = rgb(0,.5,1), "High_Signal" = rgb(0,.75,1), "Low_Signal" = rgb(0,0,1), "No_Signal" = rgb(1,.5,0), "High_No_Signal" = rgb(1,.8,0), "Low_No_Signal" = rgb(1,0,0)))+
   geom_vline(xintercept = ceiling(start-1))+
-  ggtitle("Competition between populations after a period of peace")
+  ylab("Population")+
+  coord_cartesian(xlim =c(0, time))+
+  annotate("text", x = time-3, y = 1.2, size = 8, label = paste("T=",start))
 
-ggplot(data = test[[2]], aes(x = t, y = Growth_Rate, color = Type)) +
-  geom_line()+
-  geom_vline(xintercept = ceiling(start))
+###Fight_S_Win
+start = 15
+fight=evo_join_high(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow, join_scenario, beta, start)[[1]]
+ggplot(data = fight, aes(x = t, y = Population, color = Type, linetype = Type)) +
+  geom_line(size = 1.5) +
+  theme(text = element_text(size = 20)) +
+  scale_linetype_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                        values = c("Signal" = "solid", "High_Signal" = "dashed", "Low_Signal" = "dotted", "No_Signal" = "solid", "High_No_Signal" = "dashed", "Low_No_Signal" = "dotted"))+
+  scale_color_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                     values = c("Signal" = rgb(0,.5,1), "High_Signal" = rgb(0,.75,1), "Low_Signal" = rgb(0,0,1), "No_Signal" = rgb(1,.5,0), "High_No_Signal" = rgb(1,.8,0), "Low_No_Signal" = rgb(1,0,0)))+
+  geom_vline(xintercept = ceiling(start-1))+
+  ylab("Population")+
+  coord_cartesian(xlim =c(0, time))+
+  annotate("text", x = time-3, y = .95, size = 8, label = paste("T=",start))
 
-ggplot(data = test[[3]], aes(x = t, y = Growth, color = Type)) +
-  geom_line()+
-  geom_vline(xintercept = ceiling(start))
+###Special_Fight
+start = 20
+fight=evo_join_high(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow, join_scenario, beta, start)[[1]]
+ggplot(data = fight, aes(x = t, y = Population, color = Type, linetype = Type)) +
+  geom_line(size = 1.5) +
+  theme(text = element_text(size = 20)) +
+  scale_linetype_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                        values = c("Signal" = "solid", "High_Signal" = "dashed", "Low_Signal" = "dotted", "No_Signal" = "solid", "High_No_Signal" = "dashed", "Low_No_Signal" = "dotted"))+
+  scale_color_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                     values = c("Signal" = rgb(0,.5,1), "High_Signal" = rgb(0,.75,1), "Low_Signal" = rgb(0,0,1), "No_Signal" = rgb(1,.5,0), "High_No_Signal" = rgb(1,.8,0), "Low_No_Signal" = rgb(1,0,0)))+
+  geom_vline(xintercept = ceiling(start-1))+
+  ylab("Population")+
+  coord_cartesian(xlim =c(0, time))+
+  annotate("text", x = time-3, y = .95, size = 8, label = paste("T=",start))
 
-test = regions(ratio,vHH,vHL,vLH,vLL,K,time,pop_grow,beta,start)
+###Regions
 
-ggplot(data = test[[1]], aes(x = start, y = K, fill = result)) +
+region = regions(ratio,vHH,vHL,vLH,vLL,K,time,pop_grow,beta,start)
+
+###Region_KS
+ggplot(data = region[[1]], aes(x = start, y = K, fill = result)) +
   geom_tile(color = "black") +
-  scale_fill_manual(values = c("N"=4, "S"=6)) +
+  theme(text = element_text(size = 20)) +
+  scale_fill_manual(labels = c("N" = "No Signal", "S" = "Signal"),
+                    values = c("N" = rgb(1,.5,0), "S" = rgb(0,.5,1))) +
   geom_vline(xintercept = start, color = "white") +
   geom_hline(yintercept = K, color = "white")
 
-ggplot(data = test[[2]], aes(x = beta, y = K, fill = result)) +
+###Region_KB
+ggplot(data = region[[2]], aes(x = beta, y = K, fill = result)) +
   geom_tile(color = "black") +
-  scale_fill_manual(values = c("N"=4, "S"=6)) +
+  theme(text = element_text(size = 20)) +
+  scale_fill_manual(labels = c("N" = "No Signal", "S" = "Signal"),
+                    values = c("N" = rgb(1,.5,0), "S" = rgb(0,.5,1))) +
   geom_vline(xintercept = beta, color = "white") +
   geom_hline(yintercept = K, color = "white")
 
-ggplot(data = test[[3]], aes(x = start, y = beta, fill = result)) +
+###Region_BS
+ggplot(data = region[[3]], aes(x = start, y = beta, fill = result)) +
   geom_tile(color = "black") +
-  scale_fill_manual(values = c("N"=4, "S"=6)) +
+  theme(text = element_text(size = 20)) +
+  scale_fill_manual(labels = c("N" = "No Signal", "S" = "Signal"),
+                    values = c("N" = rgb(1,.5,0), "S" = rgb(0,.5,1))) +
   geom_vline(xintercept = start, color = "white") +
   geom_hline(yintercept = beta, color = "white") 
 
