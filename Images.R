@@ -951,14 +951,16 @@ ggplot(data = fight, aes(x = t, y = Population, color = Type, linetype = Type)) 
 
 region = regions(ratio,vHH,vHL,vLH,vLL,K,time,pop_grow,beta,start)
 
-###Region_KS
+###Region_KT
 ggplot(data = region[[1]], aes(x = start, y = K, fill = result)) +
   geom_tile(color = "black") +
   theme(text = element_text(size = 20)) +
   scale_fill_manual(labels = c("N" = "No Signal", "S" = "Signal"),
                     values = c("N" = rgb(1,.5,0), "S" = rgb(0,.5,1))) +
-  geom_vline(xintercept = start, color = "white") +
-  geom_hline(yintercept = K, color = "white")
+  geom_vline(xintercept = start, color = "white", size = 1) +
+  geom_hline(yintercept = K, color = "white", size = 1) +
+  xlab("T") +
+  labs(fill = "Result")
 
 ###Region_KB
 ggplot(data = region[[2]], aes(x = beta, y = K, fill = result)) +
@@ -966,15 +968,21 @@ ggplot(data = region[[2]], aes(x = beta, y = K, fill = result)) +
   theme(text = element_text(size = 20)) +
   scale_fill_manual(labels = c("N" = "No Signal", "S" = "Signal"),
                     values = c("N" = rgb(1,.5,0), "S" = rgb(0,.5,1))) +
-  geom_vline(xintercept = beta, color = "white") +
-  geom_hline(yintercept = K, color = "white")
+  geom_vline(xintercept = beta, color = "white", size = 1) +
+  geom_hline(yintercept = K, color = "white", size = 1) +
+  xlab(expression(beta)) +
+  labs(fill = "Result")
 
-###Region_BS
+###Region_BT
 ggplot(data = region[[3]], aes(x = start, y = beta, fill = result)) +
   geom_tile(color = "black") +
   theme(text = element_text(size = 20)) +
   scale_fill_manual(labels = c("N" = "No Signal", "S" = "Signal"),
                     values = c("N" = rgb(1,.5,0), "S" = rgb(0,.5,1))) +
-  geom_vline(xintercept = start, color = "white") +
-  geom_hline(yintercept = beta, color = "white") 
+  geom_vline(xintercept = start, color = "white", size = 1) +
+  geom_hline(yintercept = beta, color = "white", size=1) +
+  ylab(expression(beta)) +
+  xlab("T") +
+  labs(fill = "Result")
+  
 
