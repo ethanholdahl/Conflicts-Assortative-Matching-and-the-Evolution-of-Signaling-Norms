@@ -1,0 +1,428 @@
+---
+title: 'Costly Signaling and the Speed of Evolution'
+subtitle: "<html><div style='float:left'></div><hr color='#33cc33' size=1px width=1096px></html>"
+author: Ethan Holdahl and Jiabin Wu 
+date: Micro Group Presentation (`r format(Sys.time(), '%d %B %Y')`)
+output:
+  xaringan::moon_reader:
+    css: [default, metropolis, metropolis-fonts] 
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+      ratio: '16:9'
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+library(knitr)
+opts_chunk$set(
+  fig.align="center",  
+  fig.height=4, #fig.width=6,
+  # out.width="748px", #out.length="520.75px",
+  dpi=300, #fig.path='Figs/',
+  cache=T#, echo=F, warning=F, message=F
+  )
+library(tidyverse)
+library(hrbrthemes)
+```
+
+# Sexual Selection
+
+<div align="center">
+<img src="Images/evoPic1.jpg" height="550px">
+</div>
+
+---
+
+# Costly Behavior
+
+<div align="center">
+<img src="Images/evoPic2.jpg" height="550px">
+</div>
+
+---
+
+# Costly Signals in Economics - Spence 1973
+
+<div align="center">
+<img src="Images/evoPic3.jpg" height="550px">
+</div>
+
+---
+
+# Grafen 1990
+
+<div align="center">
+<img src="Images/evo1.PNG" height="550px">
+</div>
+
+---
+
+# Getty 2006
+
+<div align="center">
+<img src="Images/evo2.PNG" height="550px">
+</div>
+
+---
+
+# Might insert a slide here
+
+About the paper with the begging in the chicks
+---
+
+# Summary
+
+- Costly signaling is honest
+
+- The costs of signaling doesn't have to be different between types
+
+- Signaling allows receivers to discriminate
+
+---
+# Motivation
+
+- Natural selection tells us that high types will evolve on their own
+
+- Therefore, the effect of signaling is it increases the *speed* of evolution
+
+---
+
+# Model - Non-Signaling
+
+<div align="center">
+<img src="Images/Table1.PNG" width="1000px">
+</div>
+
+Presented are the payoffs for the row player. 
+
+Individuals randomly match with other individuals in thier population each period.
+
+We are interested in a scenario where absent of signaling high types still evolve (survival of the fittest).
+
+So we enforce the relation:
+
+$$V(H,H)>V(H,L), V(L,H)>V(L,L)$$
+---
+
+# Model - Non-Signaling Dynamics
+
+<div align="center">
+<img src="Images/Table1.PNG" width="1000px">
+</div>
+
+$N_t$: Non-signaling population at time $t$
+
+$N^H_t$: Amount of high types in the non-signaling population
+
+$N^L_t$: Amount of low types in the non-signaling population
+
+So, $N_t=N^H_t+N^L_t$. 
+
+$N^H_t$ and $N^L_t$ evolve according to their expected payoffs from the above payoff table. So we have:
+
+$$N^H_{t+1}=[\frac{N^H_t}{N_t}*V(H,H)+\frac{N^L_t}{N_t}*V(H,L)]*N^H_t$$
+$$N^L_{t+1}=[\frac{N^H_t}{N_t}*V(L,H)+\frac{N^L_t}{N_t}*V(L,L)]*N^L_t$$
+---
+
+# Dynamics - Non-Signaling Population Reproductive Rate
+
+<div align="center">
+<img src="Images/Rate_No_Signal.PNG" width="1000px">
+</div>
+Paramaters:
+$V(H,H) = 1.15$,
+$V(H,L) = 0.90$,
+$V(H,H) = 0.85$,
+$V(H,L) = 0.80$,
+$N_0^H = .2$,
+$N_0^L = .8$
+---
+
+# Dynamics - Non-Signaling Population
+
+<div align="center">
+<img src="Images/Pop_No_Signal.PNG" width="1000px">
+</div>
+Paramaters:
+$V(H,H) = 1.15$,
+$V(H,L) = 0.90$,
+$V(H,H) = 0.85$,
+$V(H,L) = 0.80$,
+$N_0^H = .2$,
+$N_0^L = .8$
+---
+
+# Dynamics - Non-Signaling Population Growth
+
+<div align="center">
+<img src="Images/Growth_No_Signal.PNG" width="1000px">
+</div>
+Paramaters:
+$V(H,H) = 1.15$,
+$V(H,L) = 0.90$,
+$V(H,H) = 0.85$,
+$V(H,L) = 0.80$,
+$N_0^H = .2$,
+$N_0^L = .8$
+---
+
+# Model - Signaling
+
+<div align="center">
+<img src="Images/Table2.PNG" width="1000px">
+</div>
+
+Presented are the payoffs for the row player.
+
+$K$: the cost of signaling.
+
+The benefit of signaling is that signalers are able to discriminate and only match with each other.
+
+Incentive compatibility:
+
+$$V(L,L)>V(L,H)-K$$
+$$V(H,H)-K>V(H,L)$$
+
+So, in order for a viable signal cost to exist, it must be the case that:
+$$V(H,H)+V(L,L)>V(L,H)+V(H,L)$$
+Single Crossing Property (NOTE)
+---
+
+# Model - Signaling Dynamics
+
+<div align="center">
+<img src="Images/Table2.PNG" width="1000px">
+</div>
+
+$S_t$: Non-signaling population at time $t$
+
+$S^H_t$: Amount of high types in the signaling population
+
+$S^L_t$: Amount of low types in the signaling population
+
+So, $S_t=S^H_t+S^L_t$. 
+
+$S^H_t$ and $S^L_t$ evolve according to their expected payoffs from the above payoff table. Because of signaling high and low types only match with eachother so we have:
+
+$$S^H_{t+1}=[V(H,H)-K]*S^H_t$$
+$$S^L_{t+1}=V(L,L)*S^L_t$$
+---
+
+# Dynamics - Signaling Population Reproductive Rate
+
+<div align="center">
+<img src="Images/Rate_Signal.PNG" width="1000px">
+</div>
+Paramaters:
+$V(H,H) = 1.15$,
+$V(H,L) = 0.90$,
+$V(H,H) = 0.85$,
+$V(H,L) = 0.80$,
+$N_0^H = .2$,
+$N_0^L = .8$,
+$K = .1$
+---
+
+# Dynamics - Signaling Population
+
+<div align="center">
+<img src="Images/Pop_Signal.PNG" width="1000px">
+</div>
+Paramaters:
+$V(H,H) = 1.15$,
+$V(H,L) = 0.90$,
+$V(H,H) = 0.85$,
+$V(H,L) = 0.80$,
+$N_0^H = .2$,
+$N_0^L = .8$,
+$K = .1$
+---
+
+# Dynamics - Signaling Population Growth
+
+<div align="center">
+<img src="Images/Growth_Signal.PNG" width="1000px">
+</div>
+Paramaters:
+$V(H,H) = 1.15$,
+$V(H,L) = 0.90$,
+$V(H,H) = 0.85$,
+$V(H,L) = 0.80$,
+$N_0^H = .2$,
+$N_0^L = .8$,
+$K = .1$
+---
+
+# Dynamics - Comparing Reproductive Rates
+
+<div align="center">
+<img src="Images/Rate_Apart.PNG" width="1000px">
+</div>
+Paramaters:
+$V(H,H) = 1.15$,
+$V(H,L) = 0.90$,
+$V(H,H) = 0.85$,
+$V(H,L) = 0.80$,
+$N_0^H = .2$,
+$N_0^L = .8$,
+$K = .1$
+---
+
+# Dynamics - Comparing Populations
+
+<div align="center">
+<img src="Images/Pop_Apart.PNG" width="1000px">
+</div>
+Paramaters:
+$V(H,H) = 1.15$,
+$V(H,L) = 0.90$,
+$V(H,H) = 0.85$,
+$V(H,L) = 0.80$,
+$N_0^H = .2$,
+$N_0^L = .8$,
+$K = .1$
+---
+
+# Dynamics - Comparing Growth
+
+<div align="center">
+<img src="Images/Growth_Apart.PNG" width="1000px">
+</div>
+Paramaters:
+$V(H,H) = 1.15$,
+$V(H,L) = 0.90$,
+$V(H,H) = 0.85$,
+$V(H,L) = 0.80$,
+$N_0^H = .2$,
+$N_0^L = .8$,
+$K = .1$
+---
+#Add Transition Slide
+---
+
+# Model - Competition Dynamics
+
+Starting at period $T$, the non-signaling population and the signaling population engage in competition and start to eliminate the other population according to Lanchester's square law. 
+
+In each period, before reproduction, each member of a population kills $\beta$ members of the other population, independent of their type. So the dynamics for $N^H, N^L, S^H,$ and $S^L$ are now:
+
+
+$$N^H_{t+1}=[\frac{N^H_t}{N_t}*V(H,H)+\frac{N^L_t}{N_t}*V(H,L)]*max\{[N^H_t-\beta \frac{N^H_t}{N_t} I_{t \geq T}S_t],0\}$$
+$$N^L_{t+1}=[\frac{N^H_t}{N_t}*V(L,H)+\frac{N^L_t}{N_t}*V(L,L)]*max\{[N^L_t-\beta \frac{N^L_t}{N_t} I_{t \geq T}S_t],0\}$$
+$$S^H_{t+1}=[V(H,H)-K]*max\{[S^H_t-\beta \frac{S^H_t}{S_t} I_{t \geq T}N_t],0\}$$
+$$S^L_{t+1}=V(L,L)*max\{[S^L_t-\beta \frac{S^L_t}{S_t} I_{t \geq T}N_t],0\}$$
+
+In the equations above, $I_{t \geq T}$ is an indicator that the groups are engaging in group competition and the max argument simply ensures that the populations don't reach a negative number.
+
+---
+
+# Dynamics - Competition Where Non-Singaling Wins
+
+<div align="center">
+<img src="Images/Fight_NS_Win.PNG" width="1000px">
+</div>
+Paramaters:
+$V(H,H) = 1.15$,
+$V(H,L) = 0.90$,
+$V(H,H) = 0.85$,
+$V(H,L) = 0.80$,
+$N_0^H = .2$,
+$N_0^L = .8$,
+$K = .1$,
+$\beta = .2$, The vertical line indicate the last period before competition begins $(T-1)$.
+---
+
+# Dynamics - Competition Where Singaling Wins
+
+<div align="center">
+<img src="Images/Fight_S_Win.PNG" width="1000px">
+</div>
+Paramaters:
+$V(H,H) = 1.15$,
+$V(H,L) = 0.90$,
+$V(H,H) = 0.85$,
+$V(H,L) = 0.80$,
+$N_0^H = .2$,
+$N_0^L = .8$,
+$K = .1$,
+$\beta = .2$, The vertical line indicate the last period before competition begins $(T-1)$.
+---
+
+# Dynamics - Special Case
+
+<div align="center">
+<img src="Images/Fight_Special.PNG" width="1000px">
+</div>
+Paramaters:
+$V(H,H) = 1.15$,
+$V(H,L) = 0.90$,
+$V(H,H) = 0.85$,
+$V(H,L) = 0.80$,
+$N_0^H = .2$,
+$N_0^L = .8$,
+$K = .1$,
+$\beta = .2$, 
+The vertical line indicate the last period before competition begins $(T-1)$.
+---
+
+# Comparative Statics - BT
+
+<div align="center">
+<img src="Images/Region_BT.PNG" width="1000px">
+</div>
+Paramaters:
+$V(H,H) = 1.15$,
+$V(H,L) = 0.90$,
+$V(H,H) = 0.85$,
+$V(H,L) = 0.80$,
+$N_0^H = .2$,
+$N_0^L = .8$,
+$K = .1$,
+$\beta = .2$,
+$T = 20$
+The white lines indicate the current values
+---
+
+# Comparative Statics - KT
+
+<div align="center">
+<img src="Images/Region_KT.PNG" width="1000px">
+</div>
+Paramaters:
+$V(H,H) = 1.15$,
+$V(H,L) = 0.90$,
+$V(H,H) = 0.85$,
+$V(H,L) = 0.80$,
+$N_0^H = .2$,
+$N_0^L = .8$,
+$K = .1$,
+$\beta = .2$,
+$T = 20$
+The white lines indicate the current values
+---
+
+# Comparative Statics - KB
+
+<div align="center">
+<img src="Images/Region_KB.PNG" width="1000px">
+</div>
+Paramaters:
+$V(H,H) = 1.15$,
+$V(H,L) = 0.90$,
+$V(H,H) = 0.85$,
+$V(H,L) = 0.80$,
+$N_0^H = .2$,
+$N_0^L = .8$,
+$K = .1$,
+$\beta = .2$,
+$T = 20$
+The white lines indicate the current values
+---
+
+# Conclusion
+
+
+
