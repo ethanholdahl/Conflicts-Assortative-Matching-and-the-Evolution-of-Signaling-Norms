@@ -56,8 +56,8 @@ navbarPage(
                    Assuming a large \\(N_t\\), the law of large numbers implies that \\(N^H_t\\) and \\(N^L_t\\) evolve according to their expected payoffs
                    from the above payoff table. So we have:
 
-    $$ N^H_{t+1}=[\frac{N^H_t}{N_t}*V(H,H)+\frac{N^L_t}{N_t}*V(H,L)]*N^H_t$$
-    $$ N^L_{t+1}=[\frac{N^H_t}{N_t}*V(L,H)+\frac{N^L_t}{N_t}*V(L,L)]*N^L_t$$"
+    $$ N^H_{t+1}=[N^H_t / N_t*V(H,H)+N^L_t / N_t*V(H,L)]*N^H_t$$
+    $$ N^L_{t+1}=[N^H_t / N_t*V(L,H)+N^L_t / N_t*V(L,L)]*N^L_t$$"
         ),
         h3("Signaling with cost K"),
         HTML(
@@ -82,18 +82,41 @@ navbarPage(
                         </div>'
         ),
         helpText(
-          "Here we consider a population that does have signaling technology. Let \\(K\\) be the cost of signaling. Consistent with the handicap principle we assume that the cost of the signal, \\(K\\), is sufficiently costly such that that only high types can afford it. Formally, we require:
+          "Here we consider a population that does have signaling technology. Let \\(K\\) be the cost of signaling. Consistent with the handicap principle
+          we assume that the cost of the signal, \\(K\\), is sufficiently costly such that that only high types can afford it. Formally, we require:
                    $$V(L,L)>V(L,H)-K$$
-                   We also only want to consider signals that are potentially incentive compatible for high types. That is that high types receive a higher payoff by matching with another high type even after paying the cost of the signal than they do by matching with a low type:
+                   We also only want to consider signals that are potentially incentive compatible for high types. That is that high types receive a higher
+                   payoff by matching with another high type even after paying the cost of the signal than they do by matching with a low type:
                    $$V(H,H)-K>V(H,L)$$
                    Combining the two inequalities, we know that for a viable signal of cost $K$ to exist it must be the case that:
                    $$V(H,H)+V(L,L)>V(L,H)+V(H,L)$$
                    This is known as the single crossing property.
-                   We enforce these conditions in the selection of the reproductive rates $V(.,.)$ and cost of signal $K$. Since we are interested in analyzing equilibrium effects we assume that individuals in the population with signaling technology follow the incentive compatibility conditions above (3,4), that is that only high types signal and only low types do not signal.
-                   We define the population with signaling at time \\(t\\) as \\(S_t\\) where \\(S_t = S^H_t + S^L_t\\). Here, \\(S^H_t\\) and \\(S^L_t\\) are the amount of high types and low types, respectively, in the signaling population at time \\(t\\).
-                   Because of signaling, \\(S^H_t\\) and \\(S^L_t\\) only match with their own type and thus experience a constant growth rate over time. Their evolutionary dynamics are as follows:
+                   We enforce these conditions in the selection of the reproductive rates $V(.,.)$ and cost of signal $K$. Since we are interested in analyzing
+                   equilibrium effects we assume that individuals in the population with signaling technology follow the incentive compatibility conditions above
+                   (3,4), that is that only high types signal and only low types do not signal.
+                   We define the population with signaling at time \\(t\\) as \\(S_t\\) where \\(S_t = S^H_t + S^L_t\\). Here, \\(S^H_t\\) and \\(S^L_t\\) are
+                   the amount of high types and low types, respectively, in the signaling population at time \\(t\\).
+                   Because of signaling, \\(S^H_t\\) and \\(S^L_t\\) only match with their own type and thus experience a constant growth rate over time. Their
+                   evolutionary dynamics are as follows:
                    $$S^H_{t+1}=[V(H,H)-K]*S^H_t$$
-          $$S^L_{t+1}=V(L,L)*S^L_t$$",
+          $$S^L_{t+1}=V(L,L)*S^L_t$$"
+          ),
+        h3("Competition Between Populations"),
+        helpText(
+          "Assume that in period \\(T\\) the non-signaling population and the signaling population engage in competition. In periods \\(t \\in [0,T)\\) the
+        populations evolved according to the dynamics in the above sections, but starting at period \\(T\\) they start to eliminate the other population
+        according to Lanchester's square law. In each period, before reproduction, each member of a population kills \\(\\beta\\) members of the other population,
+          independent of their type. So the dynamics for \\(N^H, N^L, S^H,\\) and \\(S^L\\) are now:
+          $$N^H_{t+1}=[N^H_t / N_t*V(H,H)+N^L_t / N_t*V(H,L)]*max\\{[N^H_t-\\beta N^H_t / N_t * I_{t \\geq T}S_t],0\\}$$
+          $$N^L_{t+1}=[N^H_t / N_t*V(L,H)+N^L_t / N_t*V(L,L)]*max\\{[N^L_t-\\beta N^L_t / N_t * I_{t \\geq T}S_t],0\\}$$
+          
+          $$S^H_{t+1}=[V(H,H)-K]*max\\{[S^H_t-\\beta S^H_t / S_t * I_{t \\geq T}N_t],0\\}$$
+          $$S^L_{t+1}=V(L,L)*max\\{[S^L_t-\\beta S^L_t / S_t * I_{t \\geq T}N_t],0\\}$$
+          
+          In the equations above, \\(I_{t \\geq T}\\) is an indicator that the groups are engaging in group competition and the max argument simply ensures that
+          the populations don't reach a negative number."
+        ),
+        helpText(
           br(),
           br(),
           "In the simulations below you will be able to select values for a few parameters.
@@ -106,7 +129,7 @@ navbarPage(
           br(),
           "3. The cost of signaling \\(K\\)",
           br(),
-          "4. Time horizon \\(T\\)",
+          "4. Time horizon \\(t\\)",
           br(),
           "5. (If applicable) \\(H_{0,S}, L_{0,S}\\): The initial proportion of high and low type signaling",
           br(),
@@ -116,7 +139,7 @@ navbarPage(
           br(),
           "8. The level of agression in competition: \\(\\beta\\)",
           br(),
-          "9. When the groups meet"
+          "9. When competition starts: \\(T\\)"
         ),
         br(),
         sidebarLayout(
@@ -171,7 +194,7 @@ navbarPage(
             ),
             sliderInput(
               "time",
-              label = "Time horizon \\(T\\):",
+              label = "Time horizon \\(t\\):",
               min = 1,
               max = 200,
               step = 1,
@@ -211,7 +234,7 @@ navbarPage(
             ),
             sliderInput(
               "beta",
-              label = "Beta: The number each member kills each period when fighting",
+              label = "\\(\\beta\\): The number each member kills each period when fighting",
               min = 0,
               max = 1,
               step = .01,
@@ -219,7 +242,7 @@ navbarPage(
             ),
             sliderInput(
               "start",
-              label = "When do the two groups start fighting",
+              label = "\\(T\\): The start of competition",
               min = 1,
               max = 200,
               step = 1,
@@ -272,12 +295,12 @@ navbarPage(
                 )
               ),
               tabPanel(
-                "Two separate populations: One where everyone signals, the other where no one signals. They join to form one population at period T/2.",
+                "Two separate populations: One where everyone signals, the other where no one signals. They join to form one population at period t/2.",
                 plotOutput("Join_P"),
                 plotOutput("Join_R"),
                 plotOutput("Join_G"),
                 helpText(
-                  "Here I reduce each group to half it's size when the groups join at period T/2 to maintain the a fixed population size."
+                  "Here I reduce each group to half it's size when the groups join at period t/2 to maintain the a fixed population size."
                 )
               ),
               tabPanel(
