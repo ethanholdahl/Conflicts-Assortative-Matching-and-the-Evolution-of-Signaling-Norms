@@ -68,9 +68,12 @@ library(hrbrthemes)
 
 ---
 
-# Might insert a slide here
+# Rodríguez-Gironés et al. 1996
 
-About the paper with the begging in the chicks
+<div align="center">
+<img src="Images/evoPic4.jpg" height="550px">
+</div>
+
 ---
 
 # Summary
@@ -81,12 +84,18 @@ About the paper with the begging in the chicks
 
 - Signaling allows receivers to discriminate
 
+- Signaling benefits high type individuals in within group competition
+
 ---
 # Motivation
 
-- Natural selection tells us that high types will evolve on their own
+- Signaling benefits high type individuals in *within* group competition, but what about *between* group competition?
 
-- Therefore, the effect of signaling is it increases the *speed* of evolution
+- Natural selection tells us that high types, those with greater viability, will evolve on their own
+
+- The benefit to the group on the effect of signaling is it increases the *speed* of evolution 
+
+- We explore this idea by modeling otherwise identical isolated populations, one with signaling and the other without
 
 ---
 
@@ -188,7 +197,7 @@ $$V(H,H)-K>V(H,L)$$
 
 So, in order for a viable signal cost to exist, it must be the case that:
 $$V(H,H)+V(L,L)>V(L,H)+V(H,L)$$
-Single Crossing Property (NOTE)
+Recall: This is the single crossing property
 ---
 
 # Model - Signaling Dynamics
@@ -300,7 +309,14 @@ $N_0^H = .2$,
 $N_0^L = .8$,
 $K = .1$
 ---
-#Add Transition Slide
+# What might happen if these populations meet?
+
+In the next section we introduce a model where signaling and nonsignaling populations compete
+
+Allopatric speciation with secondary contact
+
+The result of this competition is likely to depend on a number of factors: how long they were seperated, how firece the competition is, and how costly the signal is.
+
 ---
 
 # Model - Competition Dynamics
@@ -383,6 +399,7 @@ $N_0^L = .8$,
 $K = .1$,
 $\beta = .2$,
 $T = 20$
+
 The white lines indicate the current values
 ---
 
@@ -401,6 +418,7 @@ $N_0^L = .8$,
 $K = .1$,
 $\beta = .2$,
 $T = 20$
+
 The white lines indicate the current values
 ---
 
@@ -419,10 +437,10 @@ $N_0^L = .8$,
 $K = .1$,
 $\beta = .2$,
 $T = 20$
+
 The white lines indicate the current values
 ---
 
 # Conclusion
 
-
-
+This model might explain why some classes of life and biomes are more likely to exhibit costly signaling. For example, birds and fish with their mobility likely have shorter periods of seperation compared to other animals. Areas like rainforests that have firece competition for resources in every niche are likely to have a higher proportion of costly signalers than other habitats.
