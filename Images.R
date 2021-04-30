@@ -409,6 +409,8 @@ ggplot(data = grow_evo, aes(x = t, y = Growth, color = Type, linetype = Type)) +
 
 #Compare Signal(gene) vs No Signal
 
+#Notes: The Signal(gene) population benefits from high v(H,H), v(L,L), and a Low V(H,L),and V(L,H) and most importantly, a low initial proportion of high types.  
+
 ###Pop_Compare
 ggplot(data = pop_evo_gene, aes(x = t, y = Population, color = Type, linetype = Type)) +
   geom_line(size = 1.5) +
