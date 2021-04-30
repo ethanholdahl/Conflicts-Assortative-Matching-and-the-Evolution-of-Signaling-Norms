@@ -347,7 +347,7 @@ ggplot(data = pop_evo_gene_S, aes(x = t, y = Population, color = Type, linetype 
   scale_linetype_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low"),
                         values = c("Signal" = "solid", "High_Signal" = "dashed", "Low_Signal" = "dotted"))+
   scale_color_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low"),
-                     values = c("Signal" = rgb(0,.5,1), "High_Signal" = rgb(0,.75,1), "Low_Signal" = rgb(0,0,1)))+
+                     values = c("Signal" = rgb(0,.75,0), "High_Signal" = rgb(0,.95,0), "Low_Signal" = rgb(0,.5,0)))+
   coord_cartesian(xlim =c(0, time))
 
 ###Rate_Signal
@@ -357,7 +357,7 @@ ggplot(data = rate_evo_gene_S, aes(x = t, y = Growth_Rate, color = Type, linetyp
   scale_linetype_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low"),
                         values = c("Signal" = "solid", "High_Signal" = "dashed", "Low_Signal" = "dotted"))+
   scale_color_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low"),
-                     values = c("Signal" = rgb(0,.5,1), "High_Signal" = rgb(0,.75,1), "Low_Signal" = rgb(0,0,1)))+
+                     values = c("Signal" = rgb(0,.75,0), "High_Signal" = rgb(0,.95,0), "Low_Signal" = rgb(0,.5,0)))+
   labs(y = "Reproductive Rate")+
   coord_cartesian(xlim =c(0, time))
 
@@ -368,7 +368,7 @@ ggplot(data = grow_evo_gene_S, aes(x = t, y = Growth, color = Type, linetype = T
   scale_linetype_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low"),
                         values = c("Signal" = "solid", "High_Signal" = "dashed", "Low_Signal" = "dotted"))+
   scale_color_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low"),
-                     values = c("Signal" = rgb(0,.5,1), "High_Signal" = rgb(0,.75,1), "Low_Signal" = rgb(0,0,1)))+
+                     values = c("Signal" = rgb(0,.75,0), "High_Signal" = rgb(0,.95,0), "Low_Signal" = rgb(0,.5,0)))+
   ylab("Growth")+
   coord_cartesian(xlim =c(0, time))
 
@@ -418,7 +418,7 @@ ggplot(data = pop_evo_gene, aes(x = t, y = Population, color = Type, linetype = 
   scale_linetype_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
                         values = c("Signal" = "solid", "High_Signal" = "dashed", "Low_Signal" = "dotted", "No_Signal" = "solid", "High_No_Signal" = "dashed", "Low_No_Signal" = "dotted"))+
   scale_color_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
-                     values = c("Signal" = rgb(0,.5,1), "High_Signal" = rgb(0,.75,1), "Low_Signal" = rgb(0,0,1), "No_Signal" = rgb(1,.5,0), "High_No_Signal" = rgb(1,.8,0), "Low_No_Signal" = rgb(1,0,0)))+
+                     values = c("Signal" = rgb(0,.75,0), "High_Signal" = rgb(0,.95,0), "Low_Signal" = rgb(0,.5,0), "No_Signal" = rgb(1,.5,0), "High_No_Signal" = rgb(1,.8,0), "Low_No_Signal" = rgb(1,0,0)))+
   coord_cartesian(xlim =c(0, time))
 
 ###Rate_Compare
@@ -428,7 +428,7 @@ ggplot(data = rate_evo_gene, aes(x = t, y = Growth_Rate, color = Type, linetype 
   scale_linetype_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
                         values = c("Signal" = "solid", "High_Signal" = "dashed", "Low_Signal" = "dotted", "No_Signal" = "solid", "High_No_Signal" = "dashed", "Low_No_Signal" = "dotted"))+
   scale_color_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
-                     values = c("Signal" = rgb(0,.5,1), "High_Signal" = rgb(0,.75,1), "Low_Signal" = rgb(0,0,1), "No_Signal" = rgb(1,.5,0), "High_No_Signal" = rgb(1,.8,0), "Low_No_Signal" = rgb(1,0,0)))+
+                     values = c("Signal" = rgb(0,.75,0), "High_Signal" = rgb(0,.95,0), "Low_Signal" = rgb(0,.5,0), "No_Signal" = rgb(1,.5,0), "High_No_Signal" = rgb(1,.8,0), "Low_No_Signal" = rgb(1,0,0)))+
   ylab("Reproductive Rate")+
   coord_cartesian(xlim =c(0, time))
 
@@ -439,7 +439,7 @@ ggplot(data = grow_evo_gene, aes(x = t, y = Growth, color = Type, linetype = Typ
   scale_linetype_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
                         values = c("Signal" = "solid", "High_Signal" = "dashed", "Low_Signal" = "dotted", "No_Signal" = "solid", "High_No_Signal" = "dashed", "Low_No_Signal" = "dotted"))+
   scale_color_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
-                     values = c("Signal" = rgb(0,.5,1), "High_Signal" = rgb(0,.75,1), "Low_Signal" = rgb(0,0,1), "No_Signal" = rgb(1,.5,0), "High_No_Signal" = rgb(1,.8,0), "Low_No_Signal" = rgb(1,0,0)))+
+                     values = c("Signal" = rgb(0,.75,0), "High_Signal" = rgb(0,.95,0), "Low_Signal" = rgb(0,.5,0), "No_Signal" = rgb(1,.5,0), "High_No_Signal" = rgb(1,.8,0), "Low_No_Signal" = rgb(1,0,0)))+
   ylab("Growth")+
   coord_cartesian(xlim =c(0, time))
 
