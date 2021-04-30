@@ -17,12 +17,15 @@ join_scenario = "Fight"
 start = 20
 beta = .2
 
+#Function for evolution of populations in isolation (only high types signal in signaling population)
 evo_apart_high = function(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow){
+  #define initial population makeup 
   H_N = ratio
   H_S = ratio
   L_N = 1-ratio
   L_S = 1-ratio
   pop = data.frame(H_N,H_S,L_N,L_S)
+  #define game table payoffs 
   SHH = max(vHH - K, 0)
   SHL = max(vHL - K, 0)
   SLH = max(vLH - K, 0)
@@ -31,21 +34,27 @@ evo_apart_high = function(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow){
   expected_payoffs = data.frame()
   group_payoffs = data.frame()
   for(i in 1:time){
+    #extract current population values
     H_N = as.numeric(tail(pop,1)[1])
     H_S = as.numeric(tail(pop,1)[2])
     L_N = as.numeric(tail(pop,1)[3])
     L_S = as.numeric(tail(pop,1)[4])
+    #find proportion of type in each matching pool (signalers with signalers, non-signalers with non-signalers)
     S_H = if(H_S+L_S>0){
       H_S/(H_S+L_S)} else {0}
     S_L = 1-S_H
     N_H = if(H_N+L_N>0){
       H_N/(H_N+L_N)} else {0}
     N_L = 1-N_H
+    #calculate next generation pop levels (current pop * expected payoff for each group)
     H_N_P = H_N*(N_H*as.numeric(payoffs[1])+N_L*as.numeric(payoffs[2]))
-    H_S_P = SHH*H_S
+    H_S_P = H_S*as.numeric(payoffs[5])
     L_N_P = L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4]))
-    L_S_P = vLL*L_S
+    L_S_P = L_S*as.numeric(payoffs[4])
+    
+    #identify growth scenario
     if (pop_grow == "Fixed population"){
+      #rebalance to keep total pop steady
       Total_N_P = H_N_P+L_N_P
       Total_S_P = H_S_P+L_S_P
       expected_payoffs1 = data.frame(High_No_Signal = H_N_P/(H_N*Total_N_P), High_Signal = H_S_P/(H_S*Total_S_P), Low_No_Signal = L_N_P/(L_N*Total_N_P), Low_Signal = L_S_P/(L_S*Total_S_P))
@@ -55,18 +64,22 @@ evo_apart_high = function(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow){
       L_S = L_S_P/Total_S_P
     }
     if (pop_grow == "Unbounded exponential growth") {
+      #set next gen pop levels to current leves and record expected payoffs
       expected_payoffs1 = data.frame(High_No_Signal = H_N_P/H_N, High_Signal = H_S_P/H_S, Low_No_Signal = L_N_P/L_N, Low_Signal = L_S_P/L_S)
       H_N = H_N_P
       H_S = H_S_P
       L_N = L_N_P
       L_S = L_S_P
     }
+    
+    #record end of generation information
     pop1 = data.frame(H_N,H_S,L_N,L_S)
     pop = rbind(pop, pop1)
     group_payoffs1 = data.frame(No_Signal = expected_payoffs1[[1]]*N_H + expected_payoffs1[[3]]*N_L, Signal = expected_payoffs1[[2]]*S_H + expected_payoffs1[[4]]*S_L)
     group_payoffs = rbind(group_payoffs, group_payoffs1)
     expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
   }
+  #clean up the data
   growth = pop[2:(time+1),]-pop[1:time,]
   growth = growth %>%
     rename(High_No_Signal = H_N,
@@ -153,6 +166,148 @@ ggplot(data = grow_evo_NS, aes(x = t, y = Growth, color = Type, linetype = Type)
 
 
 ###Signal
+pop_evo_S = pop_evo
+pop_evo_S$Type = factor(pop_evo_S$Type, levels = c("Signal", "High_Signal", "Low_Signal"))
+pop_evo_S = pop_evo_S[94:186,]
+
+
+rate_evo_S = rate_evo
+rate_evo_S$Type = factor(rate_evo_S$Type, levels = c("Signal", "High_Signal", "Low_Signal"))
+rate_evo_S = rate_evo_S[91:180,]
+
+grow_evo_S = grow_evo
+grow_evo_S$Type = factor(grow_evo_S$Type, levels = c("Signal", "High_Signal", "Low_Signal"))
+grow_evo_S = grow_evo_S[91:180,]
+
+
+###Pop_Signal
+ggplot(data = pop_evo_S, aes(x = t, y = Population, color = Type, linetype = Type)) +
+  geom_line(size = 1.5) +
+  theme(text = element_text(size = 20)) +
+  scale_linetype_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low"),
+                        values = c("Signal" = "solid", "High_Signal" = "dashed", "Low_Signal" = "dotted"))+
+  scale_color_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low"),
+                     values = c("Signal" = rgb(0,.5,1), "High_Signal" = rgb(0,.75,1), "Low_Signal" = rgb(0,0,1)))+
+  coord_cartesian(xlim =c(0, time))
+
+###Rate_Signal
+ggplot(data = rate_evo_S, aes(x = t, y = Growth_Rate, color = Type, linetype = Type)) +
+  geom_line(size = 1.5) +
+  theme(text = element_text(size = 20)) +
+  scale_linetype_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low"),
+                        values = c("Signal" = "solid", "High_Signal" = "dashed", "Low_Signal" = "dotted"))+
+  scale_color_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low"),
+                     values = c("Signal" = rgb(0,.5,1), "High_Signal" = rgb(0,.75,1), "Low_Signal" = rgb(0,0,1)))+
+  labs(y = "Reproductive Rate")+
+  coord_cartesian(xlim =c(0, time))
+
+###Growth_Signal
+ggplot(data = grow_evo_S, aes(x = t, y = Growth, color = Type, linetype = Type)) +
+  geom_line(size = 1.5) +
+  theme(text = element_text(size = 20)) +
+  scale_linetype_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low"),
+                        values = c("Signal" = "solid", "High_Signal" = "dashed", "Low_Signal" = "dotted"))+
+  scale_color_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low"),
+                     values = c("Signal" = rgb(0,.5,1), "High_Signal" = rgb(0,.75,1), "Low_Signal" = rgb(0,0,1)))+
+  ylab("Growth")+
+  coord_cartesian(xlim =c(0, time))
+
+
+#Function for evolution of populations in isolation (both types signal in signaling population)
+evo_apart_genetic = function(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow){
+  #define initial population makeup 
+  H_N = ratio
+  H_S = ratio
+  L_N = 1-ratio
+  L_S = 1-ratio
+  pop = data.frame(H_N,H_S,L_N,L_S)
+  #define game table payoffs 
+  SHH = max(vHH - K, 0)
+  SHL = max(vHL - K, 0)
+  SLH = max(vLH - K, 0)
+  SLL = max(vLL - K, 0)
+  payoffs = data.frame(vHH,vHL,vLH,vLL,SHH,SHL,SLH,SLL)
+  expected_payoffs = data.frame()
+  group_payoffs = data.frame()
+  for(i in 1:time){
+    #extract current population values
+    H_N = as.numeric(tail(pop,1)[1])
+    H_S = as.numeric(tail(pop,1)[2])
+    L_N = as.numeric(tail(pop,1)[3])
+    L_S = as.numeric(tail(pop,1)[4])
+    #find proportion of type in each matching pool (signalers with signalers, non-signalers with non-signalers)
+    S_H = if(H_S+L_S>0){
+      H_S/(H_S+L_S)} else {0}
+    S_L = 1-S_H
+    N_H = if(H_N+L_N>0){
+      H_N/(H_N+L_N)} else {0}
+    N_L = 1-N_H
+    #calculate next generation pop levels (current pop * expected payoff for each group)
+    H_N_P = H_N*(N_H*as.numeric(payoffs[1])+N_L*as.numeric(payoffs[2]))
+    H_S_P = H_S*(S_H*as.numeric(payoffs[5])+S_L*as.numeric(payoffs[6]))
+    L_N_P = L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4]))
+    L_S_P = L_S*(S_H*as.numeric(payoffs[7])+S_L*as.numeric(payoffs[8]))
+    
+    #identify growth scenario
+    if (pop_grow == "Fixed population"){
+      #rebalance to keep total pop steady
+      Total_N_P = H_N_P+L_N_P
+      Total_S_P = H_S_P+L_S_P
+      expected_payoffs1 = data.frame(High_No_Signal = H_N_P/(H_N*Total_N_P), High_Signal = H_S_P/(H_S*Total_S_P), Low_No_Signal = L_N_P/(L_N*Total_N_P), Low_Signal = L_S_P/(L_S*Total_S_P))
+      H_N = H_N_P/Total_N_P
+      H_S = H_S_P/Total_S_P
+      L_N = L_N_P/Total_N_P
+      L_S = L_S_P/Total_S_P
+    }
+    if (pop_grow == "Unbounded exponential growth") {
+      #set next gen pop levels to current leves and record expected payoffs
+      expected_payoffs1 = data.frame(High_No_Signal = H_N_P/H_N, High_Signal = H_S_P/H_S, Low_No_Signal = L_N_P/L_N, Low_Signal = L_S_P/L_S)
+      H_N = H_N_P
+      H_S = H_S_P
+      L_N = L_N_P
+      L_S = L_S_P
+    }
+    
+    #record end of generation information
+    pop1 = data.frame(H_N,H_S,L_N,L_S)
+    pop = rbind(pop, pop1)
+    group_payoffs1 = data.frame(No_Signal = expected_payoffs1[[1]]*N_H + expected_payoffs1[[3]]*N_L, Signal = expected_payoffs1[[2]]*S_H + expected_payoffs1[[4]]*S_L)
+    group_payoffs = rbind(group_payoffs, group_payoffs1)
+    expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
+  }
+  #clean up the data
+  growth = pop[2:(time+1),]-pop[1:time,]
+  growth = growth %>%
+    rename(High_No_Signal = H_N,
+           High_Signal = H_S,
+           Low_No_Signal = L_N,
+           Low_Signal = L_S) %>%
+    mutate(t = 1:time,
+           Signal = High_Signal + Low_Signal,
+           No_Signal = High_No_Signal + Low_No_Signal) %>%
+    gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Growth")
+  growth$Type = factor(growth$Type, levels = c("Signal", "High_Signal", "Low_Signal", "No_Signal", "High_No_Signal", "Low_No_Signal"))
+  
+  pop = pop %>%
+    rename(High_No_Signal = H_N,
+           High_Signal = H_S,
+           Low_No_Signal = L_N,
+           Low_Signal = L_S) %>%
+    mutate(t = 0:time,
+           Signal = High_Signal + Low_Signal,
+           No_Signal = High_No_Signal + Low_No_Signal) %>%
+    gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Population")
+  pop$Type = factor(pop$Type, levels = c("Signal", "High_Signal", "Low_Signal", "No_Signal", "High_No_Signal", "Low_No_Signal"))
+  
+  expected_payoffs = cbind(expected_payoffs,group_payoffs)
+  expected_payoffs = expected_payoffs %>%
+    mutate(t = 1:time) %>%
+    gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Growth_Rate")
+  expected_payoffs$Type = factor(expected_payoffs$Type, levels = c("Signal", "High_Signal", "Low_Signal", "No_Signal", "High_No_Signal", "Low_No_Signal"))
+  list(pop, expected_payoffs, growth)
+}
+
+###Genetic
 pop_evo_S = pop_evo
 pop_evo_S$Type = factor(pop_evo_S$Type, levels = c("Signal", "High_Signal", "Low_Signal"))
 pop_evo_S = pop_evo_S[94:186,]

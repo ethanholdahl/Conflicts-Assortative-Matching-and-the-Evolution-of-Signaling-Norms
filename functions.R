@@ -7,7 +7,7 @@ vLH = .85
 vLL = .8
 K = .1
 ratio = .2
-ratio_l = 0
+ratio_l = 1
 ratio_h = 1
 pop_grow = "Unbounded exponential growth"
 #"Fixed population", "Unbounded exponential growth", "Logistic growth to capacity"
@@ -176,6 +176,44 @@ ggplot(data = grow_evo_S, aes(x = t, y = Growth, color = Type)) +
   theme(text = element_text(size = 20)) +
   labs(y = "Growth Rate") +
   ggtitle("Growth of High Types and Low Types")
+
+#make graphs for population evolution where evryone signals
+
+pop_evo = evo(ratio, 1, 1, vHH, vHL, vLH, vLL, K, time, pop_grow)[[1]]
+rate_evo = evo(ratio, 1, 1, vHH, vHL, vLH, vLL, K, time, pop_grow)[[2]]
+grow_evo = evo(ratio, 1, 1, vHH, vHL, vLH, vLL, K, time, pop_grow)[[3]]
+
+pop_evo_S = rbind(pop_evo[pop_evo$Type=="High_Signal",], pop_evo[pop_evo$Type=="Low_Signal",])
+rate_evo_S = rbind(rate_evo[rate_evo$Type=="High_Signal",], rate_evo[rate_evo$Type=="Low_Signal",])
+grow_evo_S = rbind(grow_evo[grow_evo$Type=="Signal",], grow_evo[grow_evo$Type=="High_Signal",], grow_evo[grow_evo$Type=="Low_Signal",])
+
+pop_evo_S$Type[pop_evo_S$Type=="High_Signal"] = "High Type"
+pop_evo_S$Type[pop_evo_S$Type=="Low_Signal"] = "Low Type"
+rate_evo_S$Type[rate_evo_S$Type=="High_Signal"] = "High Type"
+rate_evo_S$Type[rate_evo_S$Type=="Low_Signal"] = "Low Type"
+grow_evo_S$Type[grow_evo_S$Type=="High_Signal"] = "High Type"
+grow_evo_S$Type[grow_evo_S$Type=="Low_Signal"] = "Low Type"
+grow_evo_S$Type[grow_evo_S$Type=="Signal"] = "Population"
+
+ggplot(data = pop_evo_NS, aes(x = t, y = Population, color = Type)) +
+  geom_line(size = 1.5) +
+  theme(text = element_text(size = 20)) +
+  ggtitle("Number of High Types and Low Types")
+
+ggplot(data = rate_evo_NS, aes(x = t, y = Growth_Rate, color = Type)) +
+  geom_line(size = 1.5) +
+  theme(text = element_text(size = 20)) +
+  labs(y = "Growth Rate") +
+  ggtitle("Growth Rate of High Types and Low Types")
+
+ggplot(data = grow_evo_NS, aes(x = t, y = Growth, color = Type)) +
+  geom_line(size = 1.5) +
+  theme(text = element_text(size = 20)) +
+  ggtitle("Growth of High Types and Low Types")
+
+
+
+#function and graph were 1 populion chooses collectively to signal
 
 evo_elect = function(ratio, vHH, vHL, vLH, vLL, K, time){
   SHH = max(vHH - K, 0)
