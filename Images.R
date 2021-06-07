@@ -1703,3 +1703,91 @@ ggplot(data = ratio_regions[[3]], aes(x = ratio, y = beta, fill = result)) +
   labs(fill = "Result") +
   ylab(expression(beta))
 
+
+##### One Population "What if" #####
+
+
+evo = function(ratio, ratio_h, ratio_l, vHH, vHL, vLH, vLL, K, time, pop_grow){
+  H_N = (1-ratio_h)*ratio
+  H_S = ratio_h*ratio
+  L_N = (1-ratio_l)*(1-ratio)
+  L_S = ratio_l*(1-ratio)
+  pop = data.frame(H_N,H_S,L_N,L_S)
+  SHH = max(vHH - K, 0)
+  SHL = max(vHL - K, 0)
+  SLH = max(vLH - K, 0)
+  SLL = max(vLL - K, 0)
+  payoffs = data.frame(vHH,vHL,vLH,vLL,SHH,SHL,SLH,SLL)
+  expected_payoffs = data.frame()
+  for(i in 1:time){
+    H_N = as.numeric(tail(pop,1)[1])
+    H_S = as.numeric(tail(pop,1)[2])
+    L_N = as.numeric(tail(pop,1)[3])
+    L_S = as.numeric(tail(pop,1)[4])
+    S_H = if(H_S+L_S>0){
+      H_S/(H_S+L_S)} else {0}
+    S_L = 1-S_H
+    N_H = if(H_N+L_N>0){
+      H_N/(H_N+L_N)} else {0}
+    N_L = 1-N_H
+    H_N_P = H_N*(N_H*as.numeric(payoffs[1])+N_L*as.numeric(payoffs[2]))
+    H_S_P = H_S*(S_H*as.numeric(payoffs[5])+S_L*as.numeric(payoffs[6]))
+    L_N_P = L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4]))
+    L_S_P = L_S*(S_H*as.numeric(payoffs[7])+S_L*as.numeric(payoffs[8]))
+    if (pop_grow == "Fixed population"){
+      Total_P = H_N_P+H_S_P+L_N_P+L_S_P
+      expected_payoffs1 = data.frame(High_No_Signal = H_N_P/(H_N*Total_P), High_Signal = H_S_P/(H_S*Total_P), Low_No_Signal = L_N_P/(L_N*Total_P), Low_Signal = L_S_P/(L_S*Total_P))
+      H_N = H_N_P/Total_P
+      H_S = H_S_P/Total_P
+      L_N = L_N_P/Total_P
+      L_S = L_S_P/Total_P
+    }
+    if (pop_grow == "Unbounded exponential growth") {
+      expected_payoffs1 = data.frame(High_No_Signal = H_N_P/H_N, High_Signal = H_S_P/H_S, Low_No_Signal = L_N_P/L_N, Low_Signal = L_S_P/L_S)
+      H_N = H_N_P
+      H_S = H_S_P
+      L_N = L_N_P
+      L_S = L_S_P
+    }
+    pop1 = data.frame(H_N,H_S,L_N,L_S)
+    pop = rbind(pop, pop1)
+    expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
+  }
+  
+  growth = pop[2:(time+1),]-pop[1:time,]
+  growth = growth %>%
+    rename(High_No_Signal = H_N,
+           High_Signal = H_S,
+           Low_No_Signal = L_N,
+           Low_Signal = L_S) %>%
+    mutate(t = 1:time,
+           Signal = High_Signal + Low_Signal,
+           No_Signal = High_No_Signal + Low_No_Signal) %>%
+    gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Growth")
+  
+  pop = pop %>%
+    rename(High_No_Signal = H_N,
+           High_Signal = H_S,
+           Low_No_Signal = L_N,
+           Low_Signal = L_S) %>%
+    mutate(t = 0:time) %>%
+    gather("High_No_Signal", "Low_No_Signal", "High_Signal", "Low_Signal", key = Type, value = "Population")
+  
+  expected_payoffs = expected_payoffs %>%
+    mutate(t = 1:time) %>%
+    gather("High_No_Signal", "Low_No_Signal", "High_Signal", "Low_Signal", key = Type, value = "Growth_Rate")
+  list(pop, expected_payoffs, growth)
+}
+
+ratio_h = .5
+time = 40
+one_pop = evo(ratio, ratio_h, ratio_l, vHH, vHL, vLH, vLL, K, time, pop_grow)
+ggplot(data = one_pop[[1]], aes(x = t, y = Population, color = Type)) +
+  geom_line(size = 1.5) +
+  theme(text = element_text(size = 20)) +
+  scale_linetype_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                        values = c("Signal" = "solid", "High_Signal" = "dashed", "Low_Signal" = "dotted", "No_Signal" = "solid", "High_No_Signal" = "dashed", "Low_No_Signal" = "dotted"))+
+  scale_color_manual(labels = c("Signal" = "Signal", "High_Signal" = "Signal:High", "Low_Signal" = "Signal:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                     values = c("Signal" = rgb(0,.5,1), "High_Signal" = rgb(0,.75,1), "Low_Signal" = rgb(0,0,1), "No_Signal" = rgb(1,.5,0), "High_No_Signal" = rgb(1,.8,0), "Low_No_Signal" = rgb(1,0,0)))+
+  coord_cartesian(xlim =c(0, time))
+
