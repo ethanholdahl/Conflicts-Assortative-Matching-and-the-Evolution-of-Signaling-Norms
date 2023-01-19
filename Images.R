@@ -794,7 +794,7 @@ evo_join_high = function(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow, join_scen
 # Regions Comparative Statics Function
 
 regions = function(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow, beta, start){
-  #create a few graphs showing which group will survive the competition under different paramaters
+  #create a few graphs showing which group will survive the competition under different parameters
   Klow = round(max(vLH-vLL,0),2)
   Khigh = round(vHH-vHL,2)
   Krange = seq(from = Klow, to = Khigh, by = .01)
@@ -1227,6 +1227,8 @@ regions = function(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow, beta, start){
   }
   list(SKregion, BKregion, SBregion)
 }
+
+
 
 # Initial Conditions Comparative Statics
 
@@ -1685,6 +1687,112 @@ initial_condition_regions = function(ratio, vHH, vHL, vLH, vLL, K, time, pop_gro
   }
   list(RTregion, RKregion, RBregion)
 }
+
+
+# What Pop wins
+
+#Function applied in regions_fighting
+fight = function(x, beta, payoffs){
+  pop = x[4:7]
+  H_N = pop[1]
+  H_S = pop[2]
+  L_N = pop[3]
+  L_S = pop[4]
+  stop = 0
+  while(stop == 0) {
+    S = H_S + L_S
+    N = H_N + L_N
+    #Fight where each kills beta of other group
+    S_D = S*beta
+    N_D = N*beta
+    if(S<=N_D){
+      if(N<=S_D & S_D>N_D){
+        #tiebreak goes to N
+        result = "S"
+        stop = 1
+      } else {
+        result = "N"
+        stop = 1
+      }
+    }
+    if(N<=S_D){
+      result = "S"
+      stop = 1
+    }
+    
+    #Proportion of types in each population
+    S_H = if(S>0){
+      H_S/S} else {0}
+    S_L = 1-S_H
+    N_H = if(N>0){
+      H_N/N} else {0}
+    N_L = 1-N_H
+    
+    #Populations after fight
+    H_N = max(H_N-S_D*N_H,0)
+    H_S = max(H_S-N_D*S_H,0)
+    L_N = max(L_N-S_D*N_L,0)
+    L_S = max(L_S-N_D*S_L,0)
+    
+    #Reproduce
+    S_H = if(H_S+L_S>0){
+      H_S/(H_S+L_S)} else {0}
+    S_L = 1-S_H
+    N_H = if(H_N+L_N>0){
+      H_N/(H_N+L_N)} else {0}
+    N_L = 1-N_H
+    H_N_P = H_N*(N_H*as.numeric(payoffs[1])+N_L*as.numeric(payoffs[2]))
+    H_S_P = H_S*as.numeric(payoffs[1]) - K
+    L_N_P = L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4]))
+    L_S_P = L_S*as.numeric(payoffs[4])
+    H_N = H_N_P
+    H_S = H_S_P
+    L_N = L_N_P
+    L_S = L_S_P
+  }
+  return(result)
+}
+
+regions_fighting = function(vHH, vHL, vLH, vLL, K, pop_grow, beta, propSteps, SNSteps){
+  
+  #Create a sequence that will turn into ratios
+  betaseq = seq(from = 1, to = beta, length.out = SNSteps+1)
+  SNrange = c(rev(betaseq),1/betaseq)[-(SNSteps+1)]
+  
+  #create a few graphs showing which group will survive the competition under different parameters
+  SHrange = seq(from = 0, to = 1, length.out = propSteps+1)
+  NHrange = seq(from = 0, to = 1, length.out = propSteps+1)
+  
+  #Payoffs
+  SHH = max(vHH - K, 0)
+  SHL = max(vHL - K, 0)
+  SLH = max(vLH - K, 0)
+  SLL = max(vLL - K, 0)
+  payoffs = data.frame(vHH,vHL,vLH,vLL,SHH,SHL,SLH,SLL)
+  
+  #Define initial population levels
+  popInitial = data.frame()
+  for(SN in SNrange){
+    #Cross Sections of the SH&NH plane for each SN
+    for(SH in SHrange){
+      for(NH in NHrange){
+        H_N = NH
+        H_S = SH*SN
+        L_N = 1-NH
+        L_S = (1-SH)*SN
+        pop = data.frame(SN, SH, NH, H_N, H_S, L_N, L_S)
+        popInitial = bind_rows(popInitial,pop)
+      }
+    }
+  }
+  
+  #apply fight function to each row of data frame
+  result = apply(popInitial, 1, fight, beta = beta, payoffs = payoffs)
+  results = cbind(popInitial, result)
+  return(results)
+}
+
+
 
 #Fight
 
