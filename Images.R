@@ -2,7 +2,7 @@
 
 
 
-library("tidyverse", "shiny", "stringr")
+library("tidyverse", "shiny", "stringr", "plotly")
 ##1100*500 image size
 
 time = 30
@@ -1792,6 +1792,16 @@ regions_fighting = function(vHH, vHL, vLH, vLL, K, pop_grow, beta, propSteps, SN
   return(results)
 }
 
+data1 = regions_fighting(vHH, vHL, vLH, vLL, K, pop_grow, beta, 20, 10)
+data1
+plot_ly(data1,
+        x = data1$SH,
+        y = data1$SN,
+        z = data1$NH,
+        color = data1$result)
+
+
+#NEXT: Find flipping point for each SH and NH -> make surface plot, multiple surfaces for changing vars
 
 
 #Fight
@@ -2007,3 +2017,32 @@ ggplot(data = one_pop[[1]], aes(x = t, y = Population, color = Type)) +
                      values = c("Signal" = rgb(0,.5,1), "High_Signal" = rgb(0,.75,1), "Low_Signal" = rgb(0,0,1), "No_Signal" = rgb(1,.5,0), "High_No_Signal" = rgb(1,.8,0), "Low_No_Signal" = rgb(1,0,0)))+
   coord_cartesian(xlim =c(0, time))
 
+## Imperfect signaling 
+
+p = rep(seq(from = .0000001, to = .4999999, length.out = 100), times = 6)
+SH = rep(seq(from = .01, to = .5, length.out = 6), each = 100)
+SL = 1-SH
+
+Krange = tibble(p) %>%
+  mutate(
+    SH = SH,
+    upper = (vHH - vHL)*(1-(SL*p)/(SH*(1-p)+SL*p)-(SH*p)/(SH*p+SL*(1-p))),
+    lower = (vLH - vLL)*(1-(SL*p)/(SH*(1-p)+SL*p)-(SH*p)/(SH*p+SL*(1-p)))
+  )
+
+ggplot(data = Krange, group = SH) +
+  geom_path(aes(x = upper, y = p, color = SH)) +
+  geom_path(aes(x = lower, y = p, color = SH)) +
+  labs(x = "K") +
+  geom_vline(xintercept = 0) +
+  geom_hline(yintercept = 0)
+
+Krange$SH = as.factor(Krange$SH)
+Krange$SH = as.numeric(Krange$SH)
+plot_ly(data = Krange, x = Krange$upper, z = Krange$p, y = Krange$SH, color = Krange$SH, name = 'upper', mode = 'lines', line = list(width = 10)) %>% 
+  add_trace(data = Krange, x = Krange$lower, z = Krange$p, y = Krange$SH, color = Krange$SH, name = 'lower', mode = 'lines', line = list(width = 10))
+plot_ly(data1,
+        x = data1$SH,
+        y = data1$SN,
+        z = data1$NH,
+        color = data1$result)
