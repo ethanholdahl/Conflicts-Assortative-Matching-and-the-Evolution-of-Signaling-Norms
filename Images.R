@@ -2018,9 +2018,9 @@ ggplot(data = one_pop[[1]], aes(x = t, y = Population, color = Type)) +
   coord_cartesian(xlim =c(0, time))
 
 ## Imperfect signaling 
-
-p = rep(seq(from = .0000001, to = .4999999, length.out = 100), times = 6)
-SH = rep(seq(from = .01, to = .5, length.out = 6), each = 100)
+# p vs K
+p = rep(seq(from = .0000001, to = .4999999, length.out = 100), times = 4)
+SH = rep(c(.05,.1,.25,.5), each = 100)
 SL = 1-SH
 
 Krange = tibble(p) %>%
@@ -2030,19 +2030,176 @@ Krange = tibble(p) %>%
     lower = (vLH - vLL)*(1-(SL*p)/(SH*(1-p)+SL*p)-(SH*p)/(SH*p+SL*(1-p)))
   )
 
+Krange$SH = as.factor(Krange$SH)
+levels(Krange$SH) = c("0.05 & 0.95", "0.1 & 0.9", "0.25 & 0.75", "0.5")
+
 ggplot(data = Krange, group = SH) +
-  geom_path(aes(x = upper, y = p, color = SH)) +
-  geom_path(aes(x = lower, y = p, color = SH)) +
-  labs(x = "K") +
+  geom_path(aes(x = upper, y = p, color = SH), size = 1) +
+  geom_path(aes(x = lower, y = p, color = SH), size = 1) +
+  geom_ribbon(aes(xmin = lower, xmax = upper, y = p, fill = SH), alpha = .1, show.legend = FALSE) +
+  scale_fill_viridis_d(option = "C", end = .9)+
+  scale_color_viridis_d(option = "C", end = .9)+
+  labs(x = "K", color = "Proportion of High Types") +
+  scale_x_continuous(breaks = c(.05,.25), labels = c("V(L,H) - V(L,L)", "V(H,H) - V(H,L)")) +
+  theme(text = element_text(size = 20)) +
+  guides(color = guide_legend(reverse = TRUE)) +
   geom_vline(xintercept = 0) +
   geom_hline(yintercept = 0)
 
-Krange$SH = as.factor(Krange$SH)
-Krange$SH = as.numeric(Krange$SH)
-plot_ly(data = Krange, x = Krange$upper, z = Krange$p, y = Krange$SH, color = Krange$SH, name = 'upper', mode = 'lines', line = list(width = 10)) %>% 
-  add_trace(data = Krange, x = Krange$lower, z = Krange$p, y = Krange$SH, color = Krange$SH, name = 'lower', mode = 'lines', line = list(width = 10))
-plot_ly(data1,
-        x = data1$SH,
-        y = data1$SN,
-        z = data1$NH,
-        color = data1$result)
+#p fixed, SH vs K
+
+p = .05
+SH = rep(seq(from = 0, to = 1, length.out = 100), times = 100)
+SL = 1-SH
+K = rep(seq(from = 0, to = vHH-vHL, length.out = 100), each = 100)
+Equilibrium = tibble(SH) %>%
+  mutate(
+    K = K,
+    upper = (vHH - vHL)*(1-(SL*p)/(SH*(1-p)+SL*p)-(SH*p)/(SH*p+SL*(1-p))),
+    lower = (vLH - vLL)*(1-(SL*p)/(SH*(1-p)+SL*p)-(SH*p)/(SH*p+SL*(1-p)))
+  )
+
+ggplot(data = Equilibrium) +
+  geom_ribbon(aes(ymin = lower, ymax = upper, x = SH), fill = 'blue', alpha = .8) +
+  geom_ribbon(aes(ymin = 0, ymax = lower, x = SH),alpha = .6) +
+  geom_ribbon(aes(ymin = upper, ymax = .5, x = SH), alpha = .6) +
+  geom_path(aes(x = SH, y = upper), color = "darkblue", size = .5) +
+  geom_path(aes(x = SH, y = lower), color = "darkblue", size = .5) +
+  scale_color_viridis_d(option = "C", end = .9)+
+  labs(y = "K", color = "Seperating Equilibrium", x = "Proportion of High Types") +
+  scale_y_continuous(breaks = c(.05,.25), labels = c("V(L,H) - V(L,L)", "V(H,H) - V(H,L)")) +
+  annotate("text", x = .5, y = .12, label = "Seperating Equilibrium", color = "white", size = 8) +
+  annotate("text", x = .5, y = .02, label = "Pooling Equilibrium", color = "white", size = 8) +
+  annotate("text", x = .5, y = .25, label = "Pooling Equilibrium", color = "white", size = 8) +
+  theme(text = element_text(size = 20)) +
+  guides(color = guide_legend(reverse = TRUE)) +
+  geom_vline(xintercept = 0) +
+  geom_hline(yintercept = 0) +
+  coord_cartesian(ylim = c(0,.28))
+
+ggplot(data = Equilibrium) +
+  geom_ribbon(aes(ymin = lower, ymax = upper, x = SH), fill = 'blue', alpha = .8) +
+  geom_path(aes(x = SH, y = upper), color = "darkblue", size = .5) +
+  geom_path(aes(x = SH, y = lower), color = "darkblue", size = .5) +
+  scale_color_viridis_d(option = "C", end = .9)+
+  labs(y = "K", color = "Seperating Equilibrium", x = "Proportion of High Types") +
+  scale_y_continuous(breaks = c(.05,.25), labels = c("V(L,H) - V(L,L)", "V(H,H) - V(H,L)")) +
+  annotate("text", x = .5, y = .12, label = "Seperating Equilibrium", color = "white", size = 8) +
+  annotate("text", x = .5, y = .02, label = "Pooling Equilibrium", color = "black", size = 8) +
+  annotate("text", x = .5, y = .25, label = "Pooling Equilibrium", color = "black", size = 8) +
+  theme(text = element_text(size = 20)) +
+  guides(color = guide_legend(reverse = TRUE)) +
+  geom_vline(xintercept = 0) +
+  geom_hline(yintercept = 0) +
+  coord_cartesian(ylim = c(0,.28))
+
+evo_apart_high = function(ratio, vHH, vHL, vLH, vLL, K, time, pop_grow){
+  #define initial population makeup 
+  H_N = ratio
+  H_S = ratio
+  L_N = 1-ratio
+  L_S = 1-ratio
+  pop = data.frame(H_N,H_S,L_N,L_S)
+  #define game table payoffs 
+  SHH = max(vHH - K, 0)
+  SHL = max(vHL - K, 0)
+  SLH = max(vLH - K, 0)
+  SLL = max(vLL - K, 0)
+  payoffs = data.frame(vHH,vHL,vLH,vLL,SHH,SHL,SLH,SLL)
+  expected_payoffs = data.frame()
+  group_payoffs = data.frame()
+  for(i in 1:time){
+    #extract current population values
+    H_N = as.numeric(tail(pop,1)[1])
+    H_S = as.numeric(tail(pop,1)[2])
+    L_N = as.numeric(tail(pop,1)[3])
+    L_S = as.numeric(tail(pop,1)[4])
+    #find proportion of type in each matching pool (signalers with signalers, non-signalers with non-signalers)
+    S_H = if(H_S+L_S>0){
+      H_S/(H_S+L_S)} else {0}
+    S_L = 1-S_H
+    N_H = if(H_N+L_N>0){
+      H_N/(H_N+L_N)} else {0}
+    N_L = 1-N_H
+    #calculate next generation pop levels (current pop * expected payoff for each group)
+    H_N_P = H_N*(N_H*as.numeric(payoffs[1])+N_L*as.numeric(payoffs[2]))
+    H_S_P = H_S*as.numeric(payoffs[5])
+    L_N_P = L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4]))
+    L_S_P = L_S*as.numeric(payoffs[4])
+    
+    #identify growth scenario
+    if (pop_grow == "Fixed population"){
+      #rebalance to keep total pop steady
+      Total_N_P = H_N_P+L_N_P
+      Total_S_P = H_S_P+L_S_P
+      expected_payoffs1 = data.frame(High_No_Signal = H_N_P/(H_N*Total_N_P), High_Signal = H_S_P/(H_S*Total_S_P), Low_No_Signal = L_N_P/(L_N*Total_N_P), Low_Signal = L_S_P/(L_S*Total_S_P))
+      H_N = H_N_P/Total_N_P
+      H_S = H_S_P/Total_S_P
+      L_N = L_N_P/Total_N_P
+      L_S = L_S_P/Total_S_P
+    }
+    if (pop_grow == "Unbounded exponential growth") {
+      #set next gen pop levels to current leves and record expected payoffs
+      expected_payoffs1 = data.frame(High_No_Signal = H_N_P/H_N, High_Signal = H_S_P/H_S, Low_No_Signal = L_N_P/L_N, Low_Signal = L_S_P/L_S)
+      H_N = H_N_P
+      H_S = H_S_P
+      L_N = L_N_P
+      L_S = L_S_P
+    }
+    
+    #record end of generation information
+    pop1 = data.frame(H_N,H_S,L_N,L_S)
+    pop = rbind(pop, pop1)
+    group_payoffs1 = data.frame(No_Signal = expected_payoffs1[[1]]*N_H + expected_payoffs1[[3]]*N_L, Signal = expected_payoffs1[[2]]*S_H + expected_payoffs1[[4]]*S_L)
+    group_payoffs = rbind(group_payoffs, group_payoffs1)
+    expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
+  }
+  #clean up the data
+  growth = pop[2:(time+1),]-pop[1:time,]
+  growth = growth %>%
+    rename(High_No_Signal = H_N,
+           High_Signal = H_S,
+           Low_No_Signal = L_N,
+           Low_Signal = L_S) %>%
+    mutate(t = 1:time,
+           Signal = High_Signal + Low_Signal,
+           No_Signal = High_No_Signal + Low_No_Signal) %>%
+    gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Growth")
+  growth$Type = factor(growth$Type, levels = c("Signal", "High_Signal", "Low_Signal", "No_Signal", "High_No_Signal", "Low_No_Signal"))
+  
+  prop = pop %>%
+    rename(High_No_Signal = H_N,
+           High_Signal = H_S,
+           Low_No_Signal = L_N,
+           Low_Signal = L_S) %>%
+    mutate(t = 0:time,
+           Signal = High_Signal + Low_Signal,
+           No_Signal = High_No_Signal + Low_No_Signal) %>%
+    mutate(High_No_Signal = High_No_Signal/No_Signal,
+           High_Signal = High_Signal/Signal,
+           Low_No_Signal = Low_No_Signal/No_Signal,
+           Low_Signal = Low_Signal/Signal) %>%
+    mutate(t = 0:time,
+           Signal = High_Signal + Low_Signal,
+           No_Signal = High_No_Signal + Low_No_Signal) %>%
+    gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Proportion_of_Types")
+  prop$Type = factor(prop$Type, levels = c("Signal", "High_Signal", "Low_Signal", "No_Signal", "High_No_Signal", "Low_No_Signal"))
+  
+  pop = pop %>%
+    rename(High_No_Signal = H_N,
+           High_Signal = H_S,
+           Low_No_Signal = L_N,
+           Low_Signal = L_S) %>%
+    mutate(t = 0:time,
+           Signal = High_Signal + Low_Signal,
+           No_Signal = High_No_Signal + Low_No_Signal) %>%
+    gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Population")
+  pop$Type = factor(pop$Type, levels = c("Signal", "High_Signal", "Low_Signal", "No_Signal", "High_No_Signal", "Low_No_Signal"))
+  
+  expected_payoffs = cbind(expected_payoffs,group_payoffs)
+  expected_payoffs = expected_payoffs %>%
+    mutate(t = 1:time) %>%
+    gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Growth_Rate")
+  expected_payoffs$Type = factor(expected_payoffs$Type, levels = c("Signal", "High_Signal", "Low_Signal", "No_Signal", "High_No_Signal", "Low_No_Signal"))
+  list(pop, expected_payoffs, growth, prop)
+}
