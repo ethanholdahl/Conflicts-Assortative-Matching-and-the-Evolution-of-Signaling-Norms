@@ -1692,8 +1692,7 @@ initial_condition_regions = function(ratio, vHH, vHL, vLH, vLL, K, time, pop_gro
 # What Pop wins
 
 #Function applied in regions_fighting
-fight = function(x, beta, payoffs){
-  pop = x[4:7]
+fight = function(pop, beta, vHH, vHL, vLH, vLL){
   H_N = pop[1]
   H_S = pop[2]
   L_N = pop[3]
@@ -1741,14 +1740,14 @@ fight = function(x, beta, payoffs){
     N_H = if(H_N+L_N>0){
       H_N/(H_N+L_N)} else {0}
     N_L = 1-N_H
-    H_N_P = H_N*(N_H*as.numeric(payoffs[1])+N_L*as.numeric(payoffs[2]))
-    H_S_P = H_S*(as.numeric(payoffs[1]) - K)
-    L_N_P = L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4]))
-    L_S_P = L_S*as.numeric(payoffs[4])
-    H_N = max(H_N_P,0)
-    H_S = max(H_S_P,0)
-    L_N = max(L_N_P,0)
-    L_S = max(L_S_P,0)
+    H_N_P = H_N*(N_H*vHH+N_L*vHL)
+    H_S_P = H_S*(vHH - K)
+    L_N_P = L_N*(N_H*vLH+N_L*vLL)
+    L_S_P = L_S*vLL
+    H_N = H_N_P
+    H_S = H_S_P
+    L_N = L_N_P
+    L_S = L_S_P
   }
   return(result)
 }
@@ -1760,8 +1759,8 @@ regions_fighting = function(vHH, vHL, vLH, vLL, K, pop_grow, beta, propSteps, SN
   SNrange = c(rev(SNseq),1/SNseq)[-(SNSteps+1)]
   
   #create a few graphs showing which group will survive the competition under different parameters
-  SHrange = seq(from = 0, to = 1, length.out = propSteps+1)
-  NHrange = seq(from = 0, to = 1, length.out = propSteps+1)
+  SHrange = seq(from = .01, to = 1, length.out = propSteps)
+  NHrange = seq(from = .01, to = 1, length.out = propSteps)
   
   #Payoffs
   SHH = max(vHH - K, 0)
@@ -1780,20 +1779,20 @@ regions_fighting = function(vHH, vHL, vLH, vLL, K, pop_grow, beta, propSteps, SN
         H_S = SH*SN
         L_N = 1-NH
         L_S = (1-SH)*SN
-        pop = data.frame(SN, SH, NH, H_N, H_S, L_N, L_S)
+        pop = data.frame(H_N, H_S, L_N, L_S, SH, NH, SN)
         popInitial = bind_rows(popInitial,pop)
       }
     }
   }
   
   #apply fight function to each row of data frame
-  result = apply(popInitial, 1, fight, beta = beta, payoffs = payoffs)
+  result = apply(popInitial, 1, fight, beta = beta, vHH = vHH, vHL = vHL, vLH = vLH, vLL = vLL)
   results = cbind(popInitial, result)
   return(results)
 }
 
 
-data1 = regions_fighting(vHH, vHL, vLH, vLL, K, pop_grow, beta, 40, 100)
+data1 = regions_fighting(vHH, vHL, vLH, vLL, K, pop_grow, beta, 100, 100)
 data1 = data1%>%
   group_by(SH, NH) %>%
   arrange(.by_group = TRUE) %>%
@@ -2093,11 +2092,118 @@ ggplot(data = Equilibrium) +
   labs(y = "K", color = "Seperating Equilibrium", x = "Proportion of High Types") +
   scale_y_continuous(breaks = c(.05*(1-2*p),.25*(1-2*p)), labels = c("(V(L,H) - V(L,L))*(1-2p)", "(V(H,H) - V(H,L))*(1-2p)")) +
   annotate("text", x = .5, y = .12, label = "Seperating Equilibrium", color = "white", size = 8) +
-  annotate("text", x = .5, y = .02, label = "Pooling Equilibrium", color = "black", size = 8) +
-  annotate("text", x = .5, y = .25, label = "Pooling Equilibrium", color = "black", size = 8) +
+  annotate("text", x = .5, y = .02, label = "Seperating Equilibrium Fails", color = "black", size = 8) +
+  annotate("text", x = .5, y = .25, label = "Seperating Equilibrium Fails", color = "black", size = 8) +
   theme(text = element_text(size = 20)) +
   guides(color = guide_legend(reverse = TRUE)) +
   geom_vline(xintercept = 0) +
   geom_hline(yintercept = 0) +
   coord_cartesian(ylim = c(0,.28))
 
+evo_apart_high = function(ratio, vHH, vHL, vLH, vLL, K, time, p){
+  #define initial population makeup 
+  H_N = ratio
+  H_S = ratio
+  L_N = 1-ratio
+  L_S = 1-ratio
+  pop = data.frame(H_N,H_S,L_N,L_S)
+  #define game table payoffs 
+  SHH = max(vHH - K, 0)
+  SHL = max(vHL - K, 0)
+  SLH = max(vLH - K, 0)
+  SLL = max(vLL - K, 0)
+  payoffs = data.frame(vHH,vHL,vLH,vLL,SHH,SHL,SLH,SLL)
+  expected_payoffs = data.frame()
+  group_payoffs = data.frame()
+  for(i in 1:time){
+    #extract current population values
+    H_N = as.numeric(tail(pop,1)[1])
+    H_S = as.numeric(tail(pop,1)[2])
+    L_N = as.numeric(tail(pop,1)[3])
+    L_S = as.numeric(tail(pop,1)[4])
+    #find proportion of type in each matching pool (signalers with signalers, non-signalers with non-signalers)
+    S_H = if(H_S+L_S>0){
+      H_S/(H_S+L_S)} else {0}
+    S_L = 1-S_H
+    N_H = if(H_N+L_N>0){
+      H_N/(H_N+L_N)} else {0}
+    N_L = 1-N_H
+    
+    #determine if seperating equilibrium
+    HighIC = (vHH-vHL)*(1-(S_L*p)/(S_H * (1 - p) + S_L * p) - (S_H * p)/(S_H * p + S_L * (1 - p))) > K
+    LowIC = (vLH-vLL)*(1-(S_L*p)/(S_H * (1 - p) + S_L * p) - (S_H * p)/(S_H * p + S_L * (1 - p))) < K
+    
+    if(HighIC & LowIC){
+      #Seperating Equilibrium
+      H_S_P = H_S * ((1-p) * (vHH*(S_H*(1-p)/(S_H*(1-p)+S_L*p)))) + (p * vHL*(S_L*(1-p)/(S_H*p+S_L*(1-p))))
+    }
+    
+    #calculate next generation pop levels (current pop * expected payoff for each group)
+    H_N_P = max(H_N*(N_H*as.numeric(payoffs[1])+N_L*as.numeric(payoffs[2])),0)
+    H_S_P = max(H_S*as.numeric(payoffs[5]),0)
+    L_N_P = max(L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4])),0)
+    L_S_P = max(L_S*as.numeric(payoffs[4]),0)
+    
+
+    expected_payoffs1 = data.frame(High_No_Signal = H_N_P/H_N, High_Signal = H_S_P/H_S, Low_No_Signal = L_N_P/L_N, Low_Signal = L_S_P/L_S)
+    H_N = H_N_P
+    H_S = H_S_P
+    L_N = L_N_P
+    L_S = L_S_P
+    
+    #record end of generation information
+    pop1 = data.frame(H_N,H_S,L_N,L_S)
+    pop = rbind(pop, pop1)
+    group_payoffs1 = data.frame(No_Signal = expected_payoffs1[[1]]*N_H + expected_payoffs1[[3]]*N_L, Signal = expected_payoffs1[[2]]*S_H + expected_payoffs1[[4]]*S_L)
+    group_payoffs = rbind(group_payoffs, group_payoffs1)
+    expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
+  }
+  #clean up the data
+  growth = pop[2:(time+1),]-pop[1:time,]
+  growth = growth %>%
+    rename(High_No_Signal = H_N,
+           High_Signal = H_S,
+           Low_No_Signal = L_N,
+           Low_Signal = L_S) %>%
+    mutate(t = 1:time,
+           Signal = High_Signal + Low_Signal,
+           No_Signal = High_No_Signal + Low_No_Signal) %>%
+    gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Growth")
+  growth$Type = factor(growth$Type, levels = c("Signal", "High_Signal", "Low_Signal", "No_Signal", "High_No_Signal", "Low_No_Signal"))
+  
+  prop = pop %>%
+    rename(High_No_Signal = H_N,
+           High_Signal = H_S,
+           Low_No_Signal = L_N,
+           Low_Signal = L_S) %>%
+    mutate(t = 0:time,
+           Signal = High_Signal + Low_Signal,
+           No_Signal = High_No_Signal + Low_No_Signal) %>%
+    mutate(High_No_Signal = High_No_Signal/No_Signal,
+           High_Signal = High_Signal/Signal,
+           Low_No_Signal = Low_No_Signal/No_Signal,
+           Low_Signal = Low_Signal/Signal) %>%
+    mutate(t = 0:time,
+           Signal = High_Signal + Low_Signal,
+           No_Signal = High_No_Signal + Low_No_Signal) %>%
+    gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Proportion_of_Types")
+  prop$Type = factor(prop$Type, levels = c("Signal", "High_Signal", "Low_Signal", "No_Signal", "High_No_Signal", "Low_No_Signal"))
+  
+  pop = pop %>%
+    rename(High_No_Signal = H_N,
+           High_Signal = H_S,
+           Low_No_Signal = L_N,
+           Low_Signal = L_S) %>%
+    mutate(t = 0:time,
+           Signal = High_Signal + Low_Signal,
+           No_Signal = High_No_Signal + Low_No_Signal) %>%
+    gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Population")
+  pop$Type = factor(pop$Type, levels = c("Signal", "High_Signal", "Low_Signal", "No_Signal", "High_No_Signal", "Low_No_Signal"))
+  
+  expected_payoffs = cbind(expected_payoffs,group_payoffs)
+  expected_payoffs = expected_payoffs %>%
+    mutate(t = 1:time) %>%
+    gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Signal", "High_Signal", "Low_Signal", key = Type, value = "Growth_Rate")
+  expected_payoffs$Type = factor(expected_payoffs$Type, levels = c("Signal", "High_Signal", "Low_Signal", "No_Signal", "High_No_Signal", "Low_No_Signal"))
+  list(pop, expected_payoffs, growth, prop)
+}
