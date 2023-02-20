@@ -1807,6 +1807,19 @@ ggplot(FightData) +
   geom_tile(aes(x = SH, y = NH, fill = SNboundary)) +
   scale_fill_viridis_c(option = "inferno")
 
+library('metR')
+
+ggplot(FightData, aes(x = SH, y = NH, z = SNboundary)) +
+  metR::geom_contour_fill() +
+  scale_fill_viridis_c(option = "inferno") +
+  metR::geom_contour2(aes(label = stat(level)), color = "white") +
+  coord_equal()
+
+ggplot(FightData, aes(x = SH, y = NH, z = SNboundary)) +
+  geom_contour(aes(color = stat(level))) +
+  scale_color_viridis_c() +
+  metR::geom_text_contour(stroke = 0.15) +
+  coord_equal()
 
 #NEXT: Find flipping point for each SH and NH -> make surface plot, multiple surfaces for changing vars
 
