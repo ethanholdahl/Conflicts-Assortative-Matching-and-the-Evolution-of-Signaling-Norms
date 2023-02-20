@@ -2246,8 +2246,6 @@ evo_imperfect = function(ratio, vHH, vHL, vLH, vLL, K, time, p){
   expected_payoffs$Type = factor(expected_payoffs$Type, levels = c("Signal", "High_Signal", "Low_Signal", "No_Signal", "High_No_Signal", "Low_No_Signal", "Imperfect", "High_Imperfect", "Low_Imperfect"))
   list(pop, expected_payoffs, growth, prop)
 }
-test = evo_imperfect(.2, vHH, vHL, vLH, vLL, K, 30, .05)
-
 
 #make graphs for population evolution separately
 
@@ -2256,7 +2254,7 @@ rate_evo = evo_imperfect(ratio, vHH, vHL, vLH, vLL, K, time, p)[[2]]
 grow_evo = evo_imperfect(ratio, vHH, vHL, vLH, vLL, K, time, p)[[3]]
 prop_evo = evo_imperfect(ratio, vHH, vHL, vLH, vLL, K, time, p)[[4]]
 
-#No Signal population
+#Imperfect population
 
 ###Imperfect
 pop_evo_I = pop_evo
@@ -2385,4 +2383,233 @@ ggplot(data = prop_evo, aes(x = t, y = Proportion_of_Types, color = Type, linety
   ylab("Proportion of Types") +
   coord_cartesian(xlim =c(0, time))
 
+
+evo_join_imperfect = function(ratio, vHH, vHL, vLH, vLL, K, time, beta, start, p){
+  H_N = ratio
+  H_I = ratio
+  L_N = 1-ratio
+  L_I = 1-ratio
+  pop = data.frame(H_N,H_I,L_N,L_I)
+  SHH = max(vHH - K, 0)
+  SHL = max(vHL - K, 0)
+  SLH = max(vLH - K, 0)
+  SLL = max(vLL - K, 0)
+  payoffs = data.frame(vHH,vHL,vLH,vLL,SHH,SHL,SLH,SLL)
+  expected_payoffs = data.frame()
+  group_payoffs = data.frame()
+  if (start != 1){
+    for(i in 1:(start-1)){
+      H_N = as.numeric(tail(pop,1)[1])
+      H_I = as.numeric(tail(pop,1)[2])
+      L_N = as.numeric(tail(pop,1)[3])
+      L_I = as.numeric(tail(pop,1)[4])
+      I_H = if(H_I+L_I>0){
+        H_I/(H_I+L_I)} else {0}
+      I_L = 1-I_H
+      N_H = if(H_N+L_N>0){
+        H_N/(H_N+L_N)} else {0}
+      N_L = 1-N_H
+      
+      #determine if separating equilibrium
+      HighIC = (vHH-vHL)*(1-(I_L*p)/(I_H * (1 - p) + I_L * p) - (I_H * p)/(I_H * p + I_L * (1 - p))) > K
+      LowIC = (vLH-vLL)*(1-(I_L*p)/(I_H * (1 - p) + I_L * p) - (I_H * p)/(I_H * p + I_L * (1 - p))) < K
+      
+      #Calculate next period population levels
+      if(HighIC & LowIC){
+        #Separating Equilibrium
+        #Imperfect Signaling
+        Imperfect_H_S = I_H*(1-p)
+        Imperfect_H_N = I_H*(p)
+        Imperfect_L_S = I_L*(p)
+        Imperfect_L_N = I_L*(1-p)
+        Imperfect_S_H = Imperfect_H_S/(Imperfect_H_S + Imperfect_L_S)
+        Imperfect_S_L = 1-Imperfect_S_H
+        Imperfect_N_H = Imperfect_H_N/(Imperfect_H_N + Imperfect_L_N)
+        Imperfect_N_L = 1-Imperfect_N_H
+        
+        #Payoffs
+        H_I_P = H_I * ((1-p) * (vHH * Imperfect_S_H + vHL * Imperfect_S_L - K) + (p) * (vHH * Imperfect_N_H + vHL * Imperfect_N_L))
+        L_I_P = L_I * ((p) * (vLH * Imperfect_S_H + vLL * Imperfect_S_L - K) + (1-p) * (vLH * Imperfect_N_H + vLL * Imperfect_N_L))
+        H_N_P = max(H_N*(N_H*as.numeric(payoffs[1])+N_L*as.numeric(payoffs[2])),0)
+        L_N_P = max(L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4])),0)
+      } else {
+        #Pooling Equilibrium (no one chooses signal. Signaling population incurs cost p*K)
+        H_I_P = max(H_I*(S_H*as.numeric(payoffs[1])+S_L*as.numeric(payoffs[2])-p*K),0)
+        L_I_P = max(L_I*(S_H*as.numeric(payoffs[3])+S_L*as.numeric(payoffs[4])-p*K),0)
+        H_N_P = max(H_N*(N_H*as.numeric(payoffs[1])+N_L*as.numeric(payoffs[2])),0)
+        L_N_P = max(L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4])),0)
+      }
+      
+      expected_payoffs1 = data.frame(High_No_Signal = H_N_P/H_N, High_Imperfect = H_I_P/H_I, Low_No_Signal = L_N_P/L_N, Low_Imperfect = L_I_P/L_I)
+      H_N = H_N_P
+      H_I = H_I_P
+      L_N = L_N_P
+      L_I = L_I_P
+      pop1 = data.frame(H_N,H_I,L_N,L_I)
+      pop = rbind(pop, pop1)
+      group_payoffs1 = data.frame(No_Signal = expected_payoffs1[[1]]*N_H + expected_payoffs1[[3]]*N_L, Imperfect = expected_payoffs1[[2]]*I_H + expected_payoffs1[[4]]*I_L)
+      group_payoffs = rbind(group_payoffs, group_payoffs1)
+      expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
+    }
+  }
+  for(i in start:time){
+    H_N = as.numeric(tail(pop,1)[1])
+    H_I = as.numeric(tail(pop,1)[2])
+    L_N = as.numeric(tail(pop,1)[3])
+    L_I = as.numeric(tail(pop,1)[4])
+    #Fight where each kills beta of other group
+    I_D = (H_I+L_I)*beta
+    N_D = (H_N+L_N)*beta
+    I_H = if(H_I+L_I>0){
+      H_I/(H_I+L_I)} else {0}
+    I_L = 1-I_H
+    N_H = if(H_N+L_N>0){
+      H_N/(H_N+L_N)} else {0}
+    N_L = 1-N_H
+    H_N = max(H_N-I_D*N_H,0)
+    H_I = max(H_I-N_D*I_H,0)
+    L_N = max(L_N-I_D*N_L,0)
+    L_I = max(L_I-N_D*I_L,0)
+    #Reproduce
+    I_H = if(H_I+L_I>0){
+      H_I/(H_I+L_I)} else {0}
+    I_L = 1-I_H
+    N_H = if(H_N+L_N>0){
+      H_N/(H_N+L_N)} else {0}
+    N_L = 1-N_H
+    
+    #determine if separating equilibrium
+    HighIC = (vHH-vHL)*(1-(I_L*p)/(I_H * (1 - p) + I_L * p) - (I_H * p)/(I_H * p + I_L * (1 - p))) > K
+    LowIC = (vLH-vLL)*(1-(I_L*p)/(I_H * (1 - p) + I_L * p) - (I_H * p)/(I_H * p + I_L * (1 - p))) < K
+    
+    #Calculate next period population levels
+    if(HighIC & LowIC){
+      #Separating Equilibrium
+      #Imperfect Signaling
+      Imperfect_H_S = I_H*(1-p)
+      Imperfect_H_N = I_H*(p)
+      Imperfect_L_S = I_L*(p)
+      Imperfect_L_N = I_L*(1-p)
+      Imperfect_S_H = Imperfect_H_S/(Imperfect_H_S + Imperfect_L_S)
+      Imperfect_S_L = 1-Imperfect_S_H
+      Imperfect_N_H = Imperfect_H_N/(Imperfect_H_N + Imperfect_L_N)
+      Imperfect_N_L = 1-Imperfect_N_H
+      
+      #Payoffs
+      H_I_P = H_I * ((1-p) * (vHH * Imperfect_S_H + vHL * Imperfect_S_L - K) + (p) * (vHH * Imperfect_N_H + vHL * Imperfect_N_L))
+      L_I_P = L_I * ((p) * (vLH * Imperfect_S_H + vLL * Imperfect_S_L - K) + (1-p) * (vLH * Imperfect_N_H + vLL * Imperfect_N_L))
+      H_N_P = max(H_N*(N_H*as.numeric(payoffs[1])+N_L*as.numeric(payoffs[2])),0)
+      L_N_P = max(L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4])),0)
+    } else {
+      #Pooling Equilibrium (no one chooses signal. Signaling population incurs cost p*K)
+      H_I_P = max(H_I*(S_H*as.numeric(payoffs[1])+S_L*as.numeric(payoffs[2])-p*K),0)
+      L_I_P = max(L_I*(S_H*as.numeric(payoffs[3])+S_L*as.numeric(payoffs[4])-p*K),0)
+      H_N_P = max(H_N*(N_H*as.numeric(payoffs[1])+N_L*as.numeric(payoffs[2])),0)
+      L_N_P = max(L_N*(N_H*as.numeric(payoffs[3])+N_L*as.numeric(payoffs[4])),0)
+    }
+    
+    expected_payoffs1 = data.frame(High_No_Signal = H_N_P/H_N, High_Imperfect = H_I_P/H_I, Low_No_Signal = L_N_P/L_N, Low_Imperfect = L_I_P/L_I)
+    H_N = H_N_P
+    H_I = H_I_P
+    L_N = L_N_P
+    L_I = L_I_P
+    pop1 = data.frame(H_N,H_I,L_N,L_I)
+    pop = rbind(pop, pop1)
+    group_payoffs1 = data.frame(No_Signal = expected_payoffs1[[1]]*N_H + expected_payoffs1[[3]]*N_L, Imperfect = expected_payoffs1[[2]]*I_H + expected_payoffs1[[4]]*I_L)
+    group_payoffs = rbind(group_payoffs, group_payoffs1)
+    expected_payoffs = rbind(expected_payoffs, expected_payoffs1)
+  }
+  
+  growth = pop[2:(time+1),]-pop[1:(time),]
+  growth = growth %>%
+    rename(High_No_Signal = H_N,
+           High_Imperfect = H_I,
+           Low_No_Signal = L_N,
+           Low_Imperfect = L_I) %>%
+    mutate(t = 1:time,
+           Imperfect = High_Imperfect + Low_Imperfect,
+           No_Signal = High_No_Signal + Low_No_Signal) %>%
+    gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Imperfect", "High_Imperfect", "Low_Imperfect", key = Type, value = "Growth")
+  growth$Type = factor(growth$Type, levels = c("Imperfect", "High_Imperfect", "Low_Imperfect", "No_Signal", "High_No_Signal", "Low_No_Signal"))
+  
+  pop = pop %>%
+    rename(High_No_Signal = H_N,
+           High_Imperfect = H_I,
+           Low_No_Signal = L_N,
+           Low_Imperfect = L_I) %>%
+    mutate(t = 0:time,
+           Imperfect = High_Imperfect + Low_Imperfect,
+           No_Signal = High_No_Signal + Low_No_Signal) %>%
+    gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Imperfect", "High_Imperfect", "Low_Imperfect", key = Type, value = "Population")
+  pop$Type = factor(pop$Type, levels = c("Imperfect", "High_Imperfect", "Low_Imperfect", "No_Signal", "High_No_Signal", "Low_No_Signal"))
+  
+  prop = pop %>%
+    pivot_wider(names_from = Type, values_from = Population) %>%
+    mutate(High_No_Signal = High_No_Signal/No_Signal,
+           High_Imperfect = High_Imperfect/Imperfect,
+           Low_No_Signal = Low_No_Signal/No_Signal,
+           Low_Imperfect = Low_Imperfect/Imperfect) %>%
+    mutate(t = 0:time,
+           Imperfect = High_Imperfect + Low_Imperfect,
+           No_Signal = High_No_Signal + Low_No_Signal) %>%
+    gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Imperfect", "High_Imperfect", "Low_Imperfect", key = Type, value = "Proportion_of_Types")
+  prop$Type = factor(prop$Type, levels = c("Imperfect", "High_Imperfect", "Low_Imperfect", "No_Signal", "High_No_Signal", "Low_No_Signal"))
+  
+  expected_payoffs = cbind(expected_payoffs,group_payoffs)
+  expected_payoffs = expected_payoffs %>%
+    mutate(t = 1:time) %>%
+    gather("No_Signal", "High_No_Signal", "Low_No_Signal", "Imperfect", "High_Imperfect", "Low_Imperfect", key = Type, value = "Growth_Rate")
+  expected_payoffs$Type = factor(expected_payoffs$Type, levels = c("Imperfect", "High_Imperfect", "Low_Imperfect", "No_Signal", "High_No_Signal", "Low_No_Signal"))
+  list(pop, expected_payoffs, growth, prop)
+}
+
+#Fight
+
+###Population Graphs
+
+###Fight_NS_Win
+start = 25
+fight=evo_join_imperfect(ratio, vHH, vHL, vLH, vLL, K, time, beta, start, p)[[1]]
+ggplot(data = fight, aes(x = t, y = Population, color = Type, linetype = Type)) +
+  geom_line(size = 1.5) +
+  theme(text = element_text(size = 20)) +
+  scale_linetype_manual(labels = c("Imperfect" = "Imperfect", "High_Imperfect" = "Imperfect:High", "Low_Imperfect" = "Imperfect:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                        values = c("Imperfect" = "solid", "High_Imperfect" = "dashed", "Low_Imperfect" = "dotted", "No_Signal" = "solid", "High_No_Signal" = "dashed", "Low_No_Signal" = "dotted"))+
+  scale_color_manual(labels = c("Imperfect" = "Imperfect", "High_Imperfect" = "Imperfect:High", "Low_Imperfect" = "Imperfect:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                     values = c("Imperfect" = rgb(0,.5,1), "High_Imperfect" = rgb(0,.75,1), "Low_Imperfect" = rgb(0,0,1), "No_Signal" = rgb(1,.5,0), "High_No_Signal" = rgb(1,.8,0), "Low_No_Signal" = rgb(1,0,0)))+
+  geom_vline(xintercept = ceiling(start-1))+
+  ylab("Population")+
+  coord_cartesian(xlim =c(0, time))+
+  annotate("text", x = time-3, y = 1.2, size = 8, label = paste("T=",start))
+
+###Fight_I_Win
+start = 15
+fight=evo_join_imperfect(ratio, vHH, vHL, vLH, vLL, K, time, beta, start, p)[[1]]
+ggplot(data = fight, aes(x = t, y = Population, color = Type, linetype = Type)) +
+  geom_line(size = 1.5) +
+  theme(text = element_text(size = 20)) +
+  scale_linetype_manual(labels = c("Imperfect" = "Imperfect", "High_Imperfect" = "Imperfect:High", "Low_Imperfect" = "Imperfect:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                        values = c("Imperfect" = "solid", "High_Imperfect" = "dashed", "Low_Imperfect" = "dotted", "No_Signal" = "solid", "High_No_Signal" = "dashed", "Low_No_Signal" = "dotted"))+
+  scale_color_manual(labels = c("Imperfect" = "Imperfect", "High_Imperfect" = "Imperfect:High", "Low_Imperfect" = "Imperfect:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                     values = c("Imperfect" = rgb(0,.5,1), "High_Imperfect" = rgb(0,.75,1), "Low_Imperfect" = rgb(0,0,1), "No_Signal" = rgb(1,.5,0), "High_No_Signal" = rgb(1,.8,0), "Low_No_Signal" = rgb(1,0,0)))+
+  geom_vline(xintercept = ceiling(start-1))+
+  ylab("Population")+
+  coord_cartesian(xlim =c(0, time))+
+  annotate("text", x = time-3, y = 1.2, size = 8, label = paste("T=",start))
+
+
+###Special_Fight
+start = 16
+fight=evo_join_imperfect(ratio, vHH, vHL, vLH, vLL, K, time, beta, start, p)[[1]]
+ggplot(data = fight, aes(x = t, y = Population, color = Type, linetype = Type)) +
+  geom_line(size = 1.5) +
+  theme(text = element_text(size = 20)) +
+  scale_linetype_manual(labels = c("Imperfect" = "Imperfect", "High_Imperfect" = "Imperfect:High", "Low_Imperfect" = "Imperfect:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                        values = c("Imperfect" = "solid", "High_Imperfect" = "dashed", "Low_Imperfect" = "dotted", "No_Signal" = "solid", "High_No_Signal" = "dashed", "Low_No_Signal" = "dotted"))+
+  scale_color_manual(labels = c("Imperfect" = "Imperfect", "High_Imperfect" = "Imperfect:High", "Low_Imperfect" = "Imperfect:Low", "No_Signal" = "No Signal", "High_No_Signal" = "No Signal:High", "Low_No_Signal" = "No Signal:Low"),
+                     values = c("Imperfect" = rgb(0,.5,1), "High_Imperfect" = rgb(0,.75,1), "Low_Imperfect" = rgb(0,0,1), "No_Signal" = rgb(1,.5,0), "High_No_Signal" = rgb(1,.8,0), "Low_No_Signal" = rgb(1,0,0)))+
+  geom_vline(xintercept = ceiling(start-1))+
+  ylab("Population")+
+  coord_cartesian(xlim =c(0, time))+
+  annotate("text", x = time-3, y = 1.2, size = 8, label = paste("T=",start))
 
