@@ -1811,6 +1811,7 @@ library('metR')
 
 ggplot(FightData, aes(x = SH, y = NH, z = SNboundary)) +
   metR::geom_contour_fill() +
+  theme(text = element_text(size = 20)) +
   scale_fill_viridis_c(option = "inferno") +
   metR::geom_contour2(aes(label = stat(level)), color = "white") +
   labs(fill = bquote(S[t]/N[t]), x = bquote(S[t]^H/S[t]), y = bquote(N[t]^H/N[t])) + 
